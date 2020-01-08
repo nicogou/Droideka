@@ -1,34 +1,13 @@
 #ifndef Droideka_h
 #define Droideka_h
 
-#include <EasyTransfer.h>
-
-struct SEND_DATA_STRUCTURE
-{
-    // put your variable definitions here for the data you want to receive
-    // THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-
-    char data_to_display[17];
-};
-
-struct RECEIVE_DATA_STRUCTURE
-{
-    // put your variable definitions here for the data you want to receive
-    // THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-
-    int16_t joy_x;
-    int16_t joy_y;
-    int16_t mode;
-    bool trig_left;
-    bool trig_right;
-};
+#include <Receiver.h>
 
 enum ErrorCode
 {
     NO_ERROR = 1,
     WRONG_MOTOR_SPECIFIED = 100,
-    WRONG_MOTOR_DIRECTION_SPECIFIED = 101,
-    NEGATIVE_SPEED_SPECIFIED = 102,
+    OUT_OF_BOUNDS_SPEED_SPECIFIED = 101,
 };
 typedef enum ErrorCode ErrorCode;
 
@@ -36,15 +15,13 @@ class Droideka
 {
 private:
     unsigned long baud_rate_bt = 38400;
+    int state_pin_bt;
 
     unsigned long last_millis;
     unsigned long interval = 100;
 
-    // create two EasyTransfer objects.
-    EasyTransfer ET_in, ET_out;
-    // give a name to the group of data
-    RECEIVE_DATA_STRUCTURE rx_data;
-    SEND_DATA_STRUCTURE tx_data;
+    // Create a Bluetooth Receiver
+    Receiver rec;
 
     // Longitudinal Motor
     int longitudinal_mot_pin_1;
@@ -53,17 +30,16 @@ private:
 
 public:
     Droideka();
-    void initialize(int l_m_p_1 = 0, int l_m_p_2 = 0, int l_m_p_pwm = 0); // Class initializer.
+    void initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state); // Class initializer.
+    // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
     bool receive_data();
-    ErrorCode move(char motor = 'l', int speed = 0, char f_or_b = 'f');
+    ErrorCode move(char motor = 'l', int speed = 0);
 
-    int16_t joy_x;
-    int16_t joy_y;
-    int16_t mode;
-    bool trig_left;
-    bool trig_right;
-
-    int16_t previous_mode = -1;
+    int throttle_x;
+    int throttle_y;
+    int button1;
+    int button2;
+    int button3;
 };
 
 #endif

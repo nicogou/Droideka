@@ -2,12 +2,9 @@
 
 Droideka::Droideka()
 {
-  Serial2.begin(baud_rate_bt);
-  ET_in.begin(details(rx_data), &Serial2);
-  ET_out.begin(details(tx_data), &Serial2);
 }
 
-void Droideka::initialize(int l_m_p_1 = 0, int l_m_p_2 = 0, int l_m_p_pwm = 0)
+void Droideka::initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state)
 {
   longitudinal_mot_pin_1 = l_m_p_1;
   longitudinal_mot_pin_2 = l_m_p_2;
@@ -16,23 +13,28 @@ void Droideka::initialize(int l_m_p_1 = 0, int l_m_p_2 = 0, int l_m_p_pwm = 0)
   pinMode(longitudinal_mot_pin_1, OUTPUT);
   pinMode(longitudinal_mot_pin_2, OUTPUT);
   pinMode(longitudinal_mot_pin_pwm, OUTPUT);
+
+  rec.start(rec_rx, rec_tx, rec_state);
 }
 
 bool Droideka::receive_data()
 {
-  if (ET_in.receiveData())
+  if (rec.isBtConnected()) // if bluetooth is connected
   {
-    joy_x = rx_data.joy_x;
-    joy_y = rx_data.joy_y;
-    mode = rx_data.mode;
-    trig_left = rx_data.trig_left;
-    trig_right = rx_data.trig_right;
-    return true;
+    if (rec.receivedDataFromController()) // if new data has been collected
+    {
+      throttle_x = rec.throttle_x;
+      throttle_y = rec.throttle_y;
+      button1 = rec.but1;
+      button2 = rec.but2;
+      button3 = rec.but3;
+      return true;
+    }
   }
   return false;
 }
 
-ErrorCode Droideka::move(char motor = 'l', int speed = 0, char f_or_b = 'f')
+ErrorCode Droideka::move(char motor = 'l', int speed = 0)
 {
   int pin_1;
   int pin_2;
@@ -51,29 +53,32 @@ ErrorCode Droideka::move(char motor = 'l', int speed = 0, char f_or_b = 'f')
   }
 
   // Choose forward or backward motion
-  if (f_or_b == 'f')
+  if (speed > 0)
   {
     digitalWrite(pin_1, 1);
     digitalWrite(pin_2, 0);
   }
-  else if (f_or_b == 'b')
+  else if (speed < 0)
   {
     digitalWrite(pin_1, 0);
     digitalWrite(pin_2, 1);
   }
   else
   {
-    return WRONG_MOTOR_DIRECTION_SPECIFIED;
+    digitalWrite(pin_1, 0);
+    digitalWrite(pin_2, 0);
   }
 
+  int mapped_speed = abs(speed);
+  mapped_speed = map(mapped_speed, 0, 100, 0, 127);
   // Choose speed
-  if (speed >= 0 && speed < 256)
+  if (mapped_speed >= 0 && mapped_speed < 128)
   {
-    analogWrite(pin_pwm, speed);
+    analogWrite(pin_pwm, mapped_speed);
   }
   else
   {
-    return NEGATIVE_SPEED_SPECIFIED;
+    return OUT_OF_BOUNDS_SPEED_SPECIFIED;
   }
 
   return NO_ERROR;
