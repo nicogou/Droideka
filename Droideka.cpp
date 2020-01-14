@@ -1,7 +1,9 @@
 #include "Droideka.h"
 
-Droideka::Droideka()
+Droideka::Droideka(Stream *debugBoardStream)
 {
+  this->servoBus_ = new ServoBus(debugBoardStream, servo_bus_write_pin);
+  this->servoBus_->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
 }
 
 void Droideka::initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state)
@@ -82,4 +84,46 @@ ErrorCode Droideka::move(char motor = 'l', int speed = 0)
   }
 
   return NO_ERROR;
+}
+
+State lastState_;
+unsigned long timestampLastHandledMessage_ = 0;
+
+void Droideka::receive_debug_board_position(uint8_t id, uint8_t command, uint16_t param1, uint16_t param2)
+{
+  (void)command;
+  (void)param2;
+  lastState_.positions[id] = param1;
+  lastState_.is_position_updated[id] = true;
+  //Check for incoherences in motor readings.
+  if (param1 <= 10 || 1030 < param1)
+  {
+    lastState_.correct_motor_reading = false;
+  }
+  // TODO find index of array according to id, now we suppose the index and id are the same
+}
+
+State *Droideka::read_debug_board_positions()
+{
+  memset(lastState_.is_position_updated, 0, sizeof(bool) * MOTOR_NB);
+  for (uint8_t i = 0; i < MOTOR_NB; i++)
+  {
+    this->servoBus_->requestPosition(this->motor_ids[i]);
+  }
+  return &lastState_;
+}
+
+void Droideka::act(Action *action)
+{
+  for (uint8_t i = 0; i < MOTOR_NB; i++)
+  {
+    if (action->commands[i][2] > 0)
+    {
+      this->servoBus_->MoveTime(this->motor_ids[i], action->commands[i][0], action->commands[i][1]);
+    }
+    else
+    {
+      this->servoBus_->SetUnload(this->motor_ids[i]);
+    }
+  }
 }
