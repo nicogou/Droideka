@@ -6,7 +6,7 @@
 #define REC_TX 50
 #define REC_STATE 48
 
-Droideka droid_1;
+Droideka droid_1(&Serial1);
 
 void setup()
 {
