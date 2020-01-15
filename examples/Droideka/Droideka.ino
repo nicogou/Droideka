@@ -10,7 +10,7 @@ Droideka *droid_1;
 
 float parking[LEG_NB][3] = {{90.0, 10.2, 9.4}, {90, 10.2, 9.4}, {-90, 10.2, 9.4}, {-90, 10.2, 9.4}};
 //float parking[LEG_NB][3] = {{0.0, 11.0, -4.5}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-Droideka_Position parking_pos;
+Droideka_Position parking_pos(parking);
 
 void setup()
 {
@@ -20,13 +20,6 @@ void setup()
     droid_1->initialize(LMP1, LMP2, LMP_PWM, REC_RX, REC_TX, REC_STATE);
     Serial.println("Start");
     Serial.println("Get into parking position");
-    for (int ii = 0; ii < LEG_NB; ii++)
-    {
-        for (int jj = 0; jj < 3; jj++)
-        {
-            parking_pos.legs[ii][jj] = parking[ii][jj];
-        }
-    }
     Action *action;
     Serial.println(droid_1->in_position(parking_pos, action));
     Serial.println();

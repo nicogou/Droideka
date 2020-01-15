@@ -22,17 +22,19 @@ struct Action
     uint16_t commands[MOTOR_NB][3]; // [position, span, activate]
 };
 
-// struct Leg_Position
-// {
-//     float shoulder_angle;
-//     float x_position;
-//     float y_position;
-// };
-
 struct Droideka_Position
 {
     float legs[LEG_NB][3];
-    // Leg_Position legs[LEG_NB];
+    Droideka_Position(float position[LEG_NB][3])
+    {
+        for (int ii = 0; ii < LEG_NB; ii++)
+        {
+            for (int jj = 0; jj < 3; jj++)
+            {
+                legs[ii][jj] = position[ii][jj];
+            }
+        }
+    }
 };
 
 enum ErrorCode
