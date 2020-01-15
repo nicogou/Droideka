@@ -127,3 +127,59 @@ void Droideka::act(Action *action)
     }
   }
 }
+
+ErrorCode Droideka::in_position(Droideka_Position pos, Action *pos_act)
+{
+  float knee_angle_sign;
+
+  for (int ii = 0; ii < LEG_NB; ii++)
+  {
+    shoulder_angle_deg[ii] = pos.legs[ii][0];
+
+    knee_angle_rad[ii] = acos((pos.legs[ii][1] * pos.legs[ii][1] + pos.legs[ii][2] * pos.legs[ii][2] - hip_length * hip_length - tibia_length * tibia_length) / (2 * hip_length * tibia_length));
+
+    // The knee angle can be either positive or negative. When the Droideka is walking, we want the knee angle to be negative, but when the Droideka is in parking position, we want the knee angle to be positive.
+    if (pos.legs[ii][2] > 0)
+    {
+      knee_angle_sign = 1;
+    }
+    else
+    {
+      knee_angle_sign = -1;
+    }
+    knee_angle_rad[ii] = knee_angle_sign * knee_angle_rad[ii];
+
+    hip_angle_rad[ii] = atan(pos.legs[ii][2] / pos.legs[ii][1]) - atan(tibia_length * sin(knee_angle_rad[ii]) / (hip_length + tibia_length * cos(knee_angle_rad[ii])));
+
+    hip_angle_deg[ii] = hip_angle_rad[ii] * 180 / 3.141592;
+    knee_angle_deg[ii] = knee_angle_rad[ii] * 180 / 3.141592;
+
+    if (shoulder_angle_deg[ii] < min_shoulder_angle || shoulder_angle_deg[ii] > max_shoulder_angle)
+    {
+      return OUT_OF_BOUNDS_SHOULDER_ANGLE;
+    }
+
+    if (hip_angle_deg[ii] < min_hip_angle || hip_angle_deg[ii] > max_hip_angle)
+    {
+      return OUT_OF_BOUNDS_HIP_ANGLE;
+    }
+
+    if (knee_angle_deg[ii] < min_knee_angle || knee_angle_deg[ii] > max_knee_angle)
+    {
+      return OUT_OF_BOUNDS_KNEE_ANGLE;
+    }
+
+    shoulder_angle_encoder[ii] = shoulder_angle_deg[ii] * servo_deg_ratio;
+    hip_angle_encoder[ii] = hip_angle_deg[ii] * servo_deg_ratio;
+    knee_angle_encoder[ii] = knee_angle_deg[ii] * servo_deg_ratio;
+
+    pos_act->commands[3 * ii][0] = (uint16_t)shoulder_angle_encoder[ii];
+    pos_act->commands[3 * ii + 2][0] = (uint16_t)hip_angle_encoder[ii];
+    pos_act->commands[3 * ii + 1][0] = (uint16_t)knee_angle_encoder[ii];
+  }
+  for (int jj = 0; jj < MOTOR_NB; jj++)
+  {
+    // pos_act->commands[jj][1] = 100;
+  }
+  return NO_ERROR;
+}
