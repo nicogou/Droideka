@@ -183,3 +183,61 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action *pos_act)
   }
   return NO_ERROR;
 }
+
+void Droideka::set_parking_position(Droideka_Position *park)
+{
+  parking = park;
+  parking_updated = true;
+}
+
+void Droideka::set_parking_position(float park[LEG_NB][3])
+{
+  parking = new Droideka_Position(park);
+  parking_updated = true;
+}
+
+ErrorCode Droideka::park(bool actually_move = true)
+{
+  if (parking_updated)
+  {
+    Droideka_Position temp_parking(parking->legs);
+    State *current_state = read_debug_board_positions();
+    float temp_shoulder_angle_deg;
+    Action *temp_action;
+
+    for (int ii = 0; ii < LEG_NB; ii++)
+    {
+      temp_shoulder_angle_deg = current_state->positions[ii] * servo_deg_ratio;
+      temp_parking.legs[ii][0] = temp_shoulder_angle_deg;
+    }
+
+    if (in_position(temp_parking, temp_action) == NO_ERROR)
+    {
+      if (actually_move)
+      {
+        act(temp_action);
+      }
+      if (in_position(*parking, temp_action) == NO_ERROR)
+      {
+        if (actually_move)
+        {
+          act(temp_action);
+        }
+      }
+      else
+      {
+        return PARKING_POSITION_IMPOSSIBLE;
+      }
+    }
+    else
+    {
+      return PREPARKING_POSITION_IMPOSSIBLE;
+    }
+
+    return NO_ERROR;
+  }
+  else
+  {
+    return PARKING_POSITION_NOT_UPDATED;
+  }
+}

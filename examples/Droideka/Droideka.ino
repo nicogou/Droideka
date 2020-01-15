@@ -18,14 +18,10 @@ void setup()
     droid_1 = new Droideka(&Serial2);
     Serial.begin(9600);
     droid_1->initialize(LMP1, LMP2, LMP_PWM, REC_RX, REC_TX, REC_STATE);
+    droid_1->set_parking_position(parking);
     Serial.println("Start");
     Serial.println("Get into parking position");
-    Action *action;
-    Serial.println(droid_1->in_position(parking_pos, action));
-    Serial.println();
-    Serial.println(droid_1->shoulder_angle_deg[0]);
-    Serial.println(droid_1->hip_angle_deg[0]);
-    Serial.println(droid_1->knee_angle_deg[0]);
+    Serial.println(droid_1->park(false));
 }
 
 void loop()

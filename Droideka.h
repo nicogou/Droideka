@@ -24,7 +24,7 @@ struct Action
 
 struct Droideka_Position
 {
-    float legs[LEG_NB][3];
+    float legs[LEG_NB][3]; // For each leg, id 0 stores the shoulder angle in degrees, id 1 and id 2 store resp. the x and y coordinates with respect to the leg frame.
     Droideka_Position(float position[LEG_NB][3])
     {
         for (int ii = 0; ii < LEG_NB; ii++)
@@ -47,6 +47,10 @@ enum ErrorCode
     OUT_OF_BOUNDS_SHOULDER_ANGLE = 200,
     OUT_OF_BOUNDS_HIP_ANGLE = 201,
     OUT_OF_BOUNDS_KNEE_ANGLE = 202,
+
+    PARKING_POSITION_NOT_UPDATED = 300,
+    PREPARKING_POSITION_IMPOSSIBLE = 301,
+    PARKING_POSITION_IMPOSSIBLE = 302,
 };
 typedef enum ErrorCode ErrorCode;
 
@@ -108,6 +112,12 @@ public:
     float shoulder_angle_encoder[LEG_NB];
     float knee_angle_encoder[LEG_NB]; //phi 1
     float hip_angle_encoder[LEG_NB];  //phi 2
+
+    void set_parking_position(Droideka_Position *park);
+    void set_parking_position(float park[LEG_NB][3]);
+    Droideka_Position *parking;
+    bool parking_updated = false;
+    ErrorCode park(bool actually_move = true);
 
     int throttle_x;
     int throttle_y;
