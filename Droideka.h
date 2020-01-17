@@ -8,6 +8,8 @@
 
 #define MOTOR_NB 12
 #define LEG_NB 4
+#define TIBIA_LENGTH 7
+#define HIP_LENGTH 7
 
 struct State
 {
@@ -58,9 +60,23 @@ struct Action
 struct Droideka_Position
 {
     float legs[LEG_NB][3]; // For each leg, id 0 stores the shoulder angle in degrees, id 1 and id 2 store resp. the x and y coordinates with respect to the leg frame.
+    bool valid_position;
 
     Droideka_Position(float position[LEG_NB][3])
     {
+        for (int ii = 0; ii < LEG_NB; ii++)
+        {
+            if (position[ii][1] * position[ii][1] + position[ii][2] * position[ii][2] > (HIP_LENGTH + TIBIA_LENGTH) * (HIP_LENGTH + TIBIA_LENGTH))
+            {
+                valid_position = false;
+                break;
+            }
+            else
+            {
+                valid_position = true;
+            }
+        }
+
         for (int ii = 0; ii < LEG_NB; ii++)
         {
             for (int jj = 0; jj < 3; jj++)
@@ -85,6 +101,8 @@ enum ErrorCode
     PARKING_POSITION_NOT_UPDATED = 300,
     PREPARKING_POSITION_IMPOSSIBLE = 301,
     PARKING_POSITION_IMPOSSIBLE = 302,
+
+    POSITION_UNREACHABLE = 400,
 };
 typedef enum ErrorCode ErrorCode;
 
@@ -107,12 +125,12 @@ private:
     static void receive_debug_board_position(uint8_t id, uint8_t command, uint16_t param1, uint16_t param2);
     float servo_deg_ratio = 0.24; // Multiplier to go from servo encoder to degrees value.
 
-    float hip_length = 7.0;   //L2
-    float tibia_length = 7.0; //L1
-
     ErrorCode encode_leg_angles(int leg_id);
     int deg_to_encoder(int motor_id, float deg_angle);
     float encoder_to_deg(int motor_id, int encoder_angle);
+
+    float hip_length = HIP_LENGTH;     //L2
+    float tibia_length = TIBIA_LENGTH; //L1
 
     // Motor ids for the Droideka legs
     unsigned int motor_ids[MOTOR_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -158,6 +176,72 @@ public:
     int button3;
 
     State *read_debug_board_positions();
+
+    float ang_1 = 45.0;
+    float ang_2 = -11.0;
+    float ang_3 = 65.0;
+    float ang_2_3 = (ang_2 + ang_3) / 2;
+    float x_1 = 4.7;
+    float x_2 = 4.3;
+    float x_3 = 7.0;
+    float y_touching = -12.0;
+    float y_not_touching = -5.5;
+    float starting_position[LEG_NB][3] = {{ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}, {ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}};
+    Droideka_Position *starting_position_walking = new Droideka_Position(starting_position);
+
+    float pos_1[3] = {ang_1, x_1, y_touching};
+    float pos_2[3] = {ang_2, x_2, y_touching};
+    float pos_2_NT[3] = {ang_2, x_2, y_not_touching};
+    float pos_3[3] = {ang_3, x_2, y_touching};
+    float pos_3_NT[3] = {ang_3, x_2, y_not_touching};
+    ErrorCode walk(int repetitions = 1);
+    int nb_sequence = 10;
+    float sequence[10][LEG_NB][3] = {
+        {{ang_1, x_1, y_touching},
+         {ang_2_3, x_2, y_not_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching}},
+        {{ang_1, x_1, y_touching},
+         {ang_3, x_3, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching}},
+
+        {{ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_3, x_3, y_touching},
+         {ang_1, x_1, y_touching}},
+
+        {{ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2_3, x_2, y_not_touching},
+         {ang_1, x_1, y_touching}},
+        {{ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching}},
+
+        {{ang_2_3, x_2, y_not_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching}},
+        {{ang_3, x_3, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching}},
+
+        {{ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_3, x_3, y_touching}},
+
+        {{ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2_3, x_2, y_not_touching}},
+        {{ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching},
+         {ang_1, x_1, y_touching},
+         {ang_2, x_2, y_touching}}};
 
     const int extreme_values_motor[MOTOR_NB][4] = {
         {115, 490, 865, 1},

@@ -174,53 +174,67 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
 {
   float knee_angle_sign;
 
-  for (int ii = 0; ii < LEG_NB; ii++)
+  if (!pos.valid_position)
   {
-    shoulder_angle_deg[ii] = pos.legs[ii][0];
-
-    knee_angle_rad[ii] = acos((pos.legs[ii][1] * pos.legs[ii][1] + pos.legs[ii][2] * pos.legs[ii][2] - hip_length * hip_length - tibia_length * tibia_length) / (2 * hip_length * tibia_length));
-
-    // The knee angle can be either positive or negative. When the Droideka is walking, we want the knee angle to be negative, but when the Droideka is in parking position, we want the knee angle to be positive.
-    if (pos.legs[ii][2] > 0)
-    {
-      knee_angle_sign = 1;
-    }
-    else
-    {
-      knee_angle_sign = -1;
-    }
-    knee_angle_rad[ii] = knee_angle_sign * knee_angle_rad[ii];
-
-    hip_angle_rad[ii] = atan(pos.legs[ii][2] / pos.legs[ii][1]) - atan(tibia_length * sin(knee_angle_rad[ii]) / (hip_length + tibia_length * cos(knee_angle_rad[ii])));
-
-    hip_angle_deg[ii] = hip_angle_rad[ii] * 180 / 3.141592;
-    knee_angle_deg[ii] = knee_angle_rad[ii] * 180 / 3.141592;
-
-    ErrorCode error = encode_leg_angles(ii);
-    if (error != NO_ERROR)
-    {
-      return error;
-    }
-
-    pos_act.commands[3 * ii + 0][0] = shoulder_angle_encoder[ii];
-    pos_act.commands[3 * ii + 1][0] = hip_angle_encoder[ii];
-    pos_act.commands[3 * ii + 2][0] = knee_angle_encoder[ii];
+    return POSITION_UNREACHABLE;
   }
-  pos_act.set_time(time);
+  else
+  {
+    for (int ii = 0; ii < LEG_NB; ii++)
+    {
+      shoulder_angle_deg[ii] = pos.legs[ii][0];
 
-  return NO_ERROR;
+      knee_angle_rad[ii] = acos((pos.legs[ii][1] * pos.legs[ii][1] + pos.legs[ii][2] * pos.legs[ii][2] - hip_length * hip_length - tibia_length * tibia_length) / (2 * hip_length * tibia_length));
+
+      // The knee angle can be either positive or negative. When the Droideka is walking, we want the knee angle to be negative, but when the Droideka is in parking position, we want the knee angle to be positive.
+      if (pos.legs[ii][2] > 0)
+      {
+        knee_angle_sign = 1;
+      }
+      else
+      {
+        knee_angle_sign = -1;
+      }
+      knee_angle_rad[ii] = knee_angle_sign * knee_angle_rad[ii];
+
+      hip_angle_rad[ii] = atan(pos.legs[ii][2] / pos.legs[ii][1]) - atan(tibia_length * sin(knee_angle_rad[ii]) / (hip_length + tibia_length * cos(knee_angle_rad[ii])));
+
+      hip_angle_deg[ii] = hip_angle_rad[ii] * 180 / 3.141592;
+      knee_angle_deg[ii] = knee_angle_rad[ii] * 180 / 3.141592;
+
+      ErrorCode error = encode_leg_angles(ii);
+      if (error != NO_ERROR)
+      {
+        return error;
+      }
+
+      pos_act.commands[3 * ii + 0][0] = shoulder_angle_encoder[ii];
+      pos_act.commands[3 * ii + 1][0] = hip_angle_encoder[ii];
+      pos_act.commands[3 * ii + 2][0] = knee_angle_encoder[ii];
+    }
+    pos_act.set_time(time);
+
+    return NO_ERROR;
+  }
 }
 
 void Droideka::set_parking_position(Droideka_Position *park)
 {
-  parking = park;
-  parking_updated = true;
+  if (park->valid_position)
+  {
+    parking = park;
+    parking_updated = true;
+  }
 }
 
 void Droideka::set_parking_position(float park[LEG_NB][3])
 {
-  parking = new Droideka_Position(park);
-  parking_updated = true;
+  Droideka_Position *temp = new Droideka_Position(park);
+  if (temp->valid_position)
+  {
+    parking = temp;
+    parking_updated = true;
+  }
 }
 
 ErrorCode Droideka::park(bool actually_move = true, int time = 2000)
@@ -231,7 +245,8 @@ ErrorCode Droideka::park(bool actually_move = true, int time = 2000)
     temp_action.set_time(time);
     temp_action.set_active();
 
-    if (in_position(*parking, temp_action, time) == NO_ERROR)
+    ErrorCode res = in_position(*parking, temp_action, time);
+    if (res)
     {
       for (int ii = 0; ii < LEG_NB; ii++)
       {
@@ -256,4 +271,52 @@ ErrorCode Droideka::park(bool actually_move = true, int time = 2000)
   {
     return PARKING_POSITION_NOT_UPDATED;
   }
+}
+
+ErrorCode Droideka::walk(int repetitions = 1)
+{
+  int time = 500;
+  int time_offset = 10;
+  Action test;
+  Droideka_Position next_pos = *starting_position_walking;
+  ErrorCode result;
+  result = in_position(next_pos, test, time);
+  if (result == NO_ERROR)
+  {
+    test.set_active();
+    act(&test);
+    delay(time + time_offset);
+  }
+  else
+  {
+    test.set_active(false);
+    return result;
+  }
+  delay(2000);
+  for (int rep = 0; rep < repetitions; rep++)
+  {
+    for (int ii = 0; ii < nb_sequence; ii++)
+    {
+      for (int jj = 0; jj < LEG_NB; jj++)
+      {
+        for (int kk = 0; kk < 3; kk++)
+        {
+          next_pos.legs[jj][kk] = sequence[ii][jj][kk];
+        }
+      }
+      result = in_position(next_pos, test, time);
+      if (result == NO_ERROR)
+      {
+        test.set_active();
+        act(&test);
+        delay(time + time_offset);
+      }
+      else
+      {
+        test.set_active(false);
+        return result;
+      }
+    }
+  }
+  return NO_ERROR;
 }
