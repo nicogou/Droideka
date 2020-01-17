@@ -1,9 +1,11 @@
 #include "Droideka.h"
 
-Droideka::Droideka(Stream *debugBoardStream)
+Droideka::Droideka(Stream *debugBoardStream_front, Stream *debugBoardStream_back)
 {
-  this->servoBus_ = new ServoBus(debugBoardStream, servo_bus_write_pin);
-  this->servoBus_->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
+  servoBus_front = new ServoBus(debugBoardStream_front, servo_bus_write_pin);
+  servoBus_back = new ServoBus(debugBoardStream_back, servo_bus_write_pin);
+  servoBus_front->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
+  servoBus_back->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
 }
 
 void Droideka::initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state)
@@ -108,27 +110,67 @@ State *Droideka::read_debug_board_positions()
   memset(lastState_.is_position_updated, 0, sizeof(bool) * MOTOR_NB);
   for (uint8_t i = 0; i < MOTOR_NB; i++)
   {
-    this->servoBus_->requestPosition(this->motor_ids[i]);
+    this->servoBus_front->requestPosition(this->motor_ids[i]);
   }
   return &lastState_;
 }
 
 void Droideka::act(Action *action)
 {
-  for (uint8_t i = 0; i < MOTOR_NB; i++)
+  for (uint8_t i = 0; i < MOTOR_NB / 2; i++)
   {
     if (action->commands[i][2] > 0)
     {
-      this->servoBus_->MoveTime(this->motor_ids[i], action->commands[i][0], action->commands[i][1]);
+      this->servoBus_front->MoveTime(this->motor_ids[i], action->commands[i][0], action->commands[i][1]);
+      this->servoBus_back->MoveTime(this->motor_ids[i + 6], action->commands[i + 6][0], action->commands[i + 6][1]);
     }
     else
     {
-      this->servoBus_->SetUnload(this->motor_ids[i]);
+      this->servoBus_front->SetUnload(this->motor_ids[i]);
+      this->servoBus_back->SetUnload(this->motor_ids[i + 6]);
     }
   }
 }
 
-ErrorCode Droideka::in_position(Droideka_Position pos, Action *pos_act)
+ErrorCode Droideka::encode_leg_angles(int leg_id)
+{
+  shoulder_angle_encoder[leg_id] = deg_to_encoder(3 * leg_id + 0, shoulder_angle_deg[leg_id]);
+  hip_angle_encoder[leg_id] = deg_to_encoder(3 * leg_id + 1, hip_angle_deg[leg_id]);
+  knee_angle_encoder[leg_id] = deg_to_encoder(3 * leg_id + 2, knee_angle_deg[leg_id]);
+
+  if (shoulder_angle_encoder[leg_id] < extreme_values_motor[3 * leg_id + 0][0] || shoulder_angle_encoder[leg_id] > extreme_values_motor[3 * leg_id + 0][2])
+  {
+    return OUT_OF_BOUNDS_SHOULDER_ANGLE;
+  }
+  if (hip_angle_encoder[leg_id] < extreme_values_motor[3 * leg_id + 1][0] || hip_angle_encoder[leg_id] > extreme_values_motor[3 * leg_id + 1][2])
+  {
+    return OUT_OF_BOUNDS_HIP_ANGLE;
+  }
+  if (knee_angle_encoder[leg_id] < extreme_values_motor[3 * leg_id + 2][0] || knee_angle_encoder[leg_id] > extreme_values_motor[3 * leg_id + 2][2])
+  {
+    return OUT_OF_BOUNDS_KNEE_ANGLE;
+  }
+
+  return NO_ERROR;
+}
+
+int Droideka::deg_to_encoder(int motor_id, float deg_angle)
+{
+  int encoder_angle;
+  encoder_angle = extreme_values_motor[motor_id][1] + extreme_values_motor[motor_id][3] * (int)(deg_angle / servo_deg_ratio);
+
+  return encoder_angle;
+}
+
+float Droideka::encoder_to_deg(int motor_id, int encoder_angle)
+{
+  float deg_angle;
+  deg_angle = (encoder_angle - extreme_values_motor[motor_id][1]) * servo_deg_ratio * extreme_values_motor[motor_id][3];
+
+  return deg_angle;
+}
+
+ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time)
 {
   float knee_angle_sign;
 
@@ -154,33 +196,18 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action *pos_act)
     hip_angle_deg[ii] = hip_angle_rad[ii] * 180 / 3.141592;
     knee_angle_deg[ii] = knee_angle_rad[ii] * 180 / 3.141592;
 
-    if (shoulder_angle_deg[ii] < min_shoulder_angle || shoulder_angle_deg[ii] > max_shoulder_angle)
+    ErrorCode error = encode_leg_angles(ii);
+    if (error != NO_ERROR)
     {
-      return OUT_OF_BOUNDS_SHOULDER_ANGLE;
+      return error;
     }
 
-    if (hip_angle_deg[ii] < min_hip_angle || hip_angle_deg[ii] > max_hip_angle)
-    {
-      return OUT_OF_BOUNDS_HIP_ANGLE;
-    }
-
-    if (knee_angle_deg[ii] < min_knee_angle || knee_angle_deg[ii] > max_knee_angle)
-    {
-      return OUT_OF_BOUNDS_KNEE_ANGLE;
-    }
-
-    shoulder_angle_encoder[ii] = shoulder_angle_deg[ii] * servo_deg_ratio;
-    hip_angle_encoder[ii] = hip_angle_deg[ii] * servo_deg_ratio;
-    knee_angle_encoder[ii] = knee_angle_deg[ii] * servo_deg_ratio;
-
-    pos_act->commands[3 * ii][0] = (uint16_t)shoulder_angle_encoder[ii];
-    pos_act->commands[3 * ii + 2][0] = (uint16_t)hip_angle_encoder[ii];
-    pos_act->commands[3 * ii + 1][0] = (uint16_t)knee_angle_encoder[ii];
+    pos_act.commands[3 * ii + 0][0] = shoulder_angle_encoder[ii];
+    pos_act.commands[3 * ii + 1][0] = hip_angle_encoder[ii];
+    pos_act.commands[3 * ii + 2][0] = knee_angle_encoder[ii];
   }
-  for (int jj = 0; jj < MOTOR_NB; jj++)
-  {
-    // pos_act->commands[jj][1] = 100;
-  }
+  pos_act.set_time(time);
+
   return NO_ERROR;
 }
 
@@ -196,37 +223,26 @@ void Droideka::set_parking_position(float park[LEG_NB][3])
   parking_updated = true;
 }
 
-ErrorCode Droideka::park(bool actually_move = true)
+ErrorCode Droideka::park(bool actually_move = true, int time = 2000)
 {
   if (parking_updated)
   {
-    Droideka_Position temp_parking(parking->legs);
-    State *current_state = read_debug_board_positions();
-    float temp_shoulder_angle_deg;
-    Action *temp_action;
+    Action temp_action;
+    temp_action.set_time(time);
+    temp_action.set_active();
 
-    for (int ii = 0; ii < LEG_NB; ii++)
+    if (in_position(*parking, temp_action, time) == NO_ERROR)
     {
-      temp_shoulder_angle_deg = current_state->positions[ii] * servo_deg_ratio;
-      temp_parking.legs[ii][0] = temp_shoulder_angle_deg;
-    }
-
-    if (in_position(temp_parking, temp_action) == NO_ERROR)
-    {
+      for (int ii = 0; ii < LEG_NB; ii++)
+      {
+        temp_action.motor_active(3 * ii, false);
+      }
       if (actually_move)
       {
-        act(temp_action);
-      }
-      if (in_position(*parking, temp_action) == NO_ERROR)
-      {
-        if (actually_move)
-        {
-          act(temp_action);
-        }
-      }
-      else
-      {
-        return PARKING_POSITION_IMPOSSIBLE;
+        act(&temp_action);
+        delay(time + 1000);
+        temp_action.set_active();
+        act(&temp_action);
       }
     }
     else
