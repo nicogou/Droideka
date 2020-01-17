@@ -44,6 +44,51 @@ struct Action
         }
     }
 
+    void shoulders_active(bool activate = true)
+    {
+        for (int ii = 0; ii < LEG_NB; ii++)
+        {
+            if (activate)
+            {
+                commands[3 * ii][2] = 1;
+            }
+            else
+            {
+                commands[3 * ii][2] = 0;
+            }
+        }
+    }
+
+    void hips_active(bool activate = true)
+    {
+        for (int ii = 0; ii < LEG_NB; ii++)
+        {
+            if (activate)
+            {
+                commands[3 * ii + 1][2] = 1;
+            }
+            else
+            {
+                commands[3 * ii + 1][2] = 0;
+            }
+        }
+    }
+
+    void knees_active(bool activate = true)
+    {
+        for (int ii = 0; ii < LEG_NB; ii++)
+        {
+            if (activate)
+            {
+                commands[3 * ii + 2][2] = 1;
+            }
+            else
+            {
+                commands[3 * ii + 2][2] = 0;
+            }
+        }
+    }
+
     void motor_active(int id, bool activate)
     {
         if (activate)
@@ -167,7 +212,8 @@ public:
     void set_parking_position(float park[LEG_NB][3]);
     Droideka_Position *parking;
     bool parking_updated = false;
-    ErrorCode park(bool actually_move = true, int time = 2000);
+    ErrorCode park(bool actually_move = true, int time = 500, int offset_time = 500);
+    ErrorCode unpark();
 
     int throttle_x;
     int throttle_y;
@@ -185,7 +231,7 @@ public:
     float x_2 = 4.3;
     float x_3 = 7.0;
     float y_touching = -12.0;
-    float y_not_touching = -5.5;
+    float y_not_touching = -8;
     float starting_position[LEG_NB][3] = {{ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}, {ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}};
     Droideka_Position *starting_position_walking = new Droideka_Position(starting_position);
 

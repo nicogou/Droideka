@@ -237,7 +237,7 @@ void Droideka::set_parking_position(float park[LEG_NB][3])
   }
 }
 
-ErrorCode Droideka::park(bool actually_move = true, int time = 2000)
+ErrorCode Droideka::park(bool actually_move = true, int time = 500, int offset_time = 500)
 {
   if (parking_updated)
   {
@@ -248,16 +248,14 @@ ErrorCode Droideka::park(bool actually_move = true, int time = 2000)
     ErrorCode res = in_position(*parking, temp_action, time);
     if (res)
     {
-      for (int ii = 0; ii < LEG_NB; ii++)
-      {
-        temp_action.motor_active(3 * ii, false);
-      }
+      temp_action.shoulders_active(false);
       if (actually_move)
       {
         act(&temp_action);
-        delay(time + 1000);
+        delay(time + offset_time);
         temp_action.set_active();
         act(&temp_action);
+        delay(time + offset_time);
       }
     }
     else
@@ -273,23 +271,51 @@ ErrorCode Droideka::park(bool actually_move = true, int time = 2000)
   }
 }
 
-ErrorCode Droideka::walk(int repetitions = 1)
+ErrorCode Droideka::unpark()
 {
   int time = 500;
-  int time_offset = 10;
-  Action test;
-  Droideka_Position next_pos = *starting_position_walking;
+  int time_offset = 500;
+  Action unparking;
+
   ErrorCode result;
-  result = in_position(next_pos, test, time);
+  result = in_position(*starting_position_walking, unparking, time);
   if (result == NO_ERROR)
   {
-    test.set_active();
-    act(&test);
+    unparking.set_active();
+    unparking.knees_active(false);
+    unparking.hips_active(false);
+    act(&unparking);
+    delay(time + time_offset);
+    unparking.set_active();
+    act(&unparking);
     delay(time + time_offset);
   }
   else
   {
-    test.set_active(false);
+    unparking.set_active(false);
+    return result;
+  }
+
+  return NO_ERROR;
+}
+
+ErrorCode Droideka::walk(int repetitions = 1)
+{
+  int time = 500;
+  int time_offset = 10;
+  Action walking;
+  Droideka_Position next_pos = *starting_position_walking;
+  ErrorCode result;
+  result = in_position(next_pos, walking, time);
+  if (result == NO_ERROR)
+  {
+    walking.set_active();
+    act(&walking);
+    delay(time + time_offset);
+  }
+  else
+  {
+    walking.set_active(false);
     return result;
   }
   delay(2000);
@@ -304,16 +330,16 @@ ErrorCode Droideka::walk(int repetitions = 1)
           next_pos.legs[jj][kk] = sequence[ii][jj][kk];
         }
       }
-      result = in_position(next_pos, test, time);
+      result = in_position(next_pos, walking, time);
       if (result == NO_ERROR)
       {
-        test.set_active();
-        act(&test);
+        walking.set_active();
+        act(&walking);
         delay(time + time_offset);
       }
       else
       {
-        test.set_active(false);
+        walking.set_active(false);
         return result;
       }
     }
