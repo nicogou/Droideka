@@ -235,11 +235,6 @@ public:
     float starting_position[LEG_NB][3] = {{ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}, {ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}};
     Droideka_Position *starting_position_walking = new Droideka_Position(starting_position);
 
-    float pos_1[3] = {ang_1, x_1, y_touching};
-    float pos_2[3] = {ang_2, x_2, y_touching};
-    float pos_2_NT[3] = {ang_2, x_2, y_not_touching};
-    float pos_3[3] = {ang_3, x_2, y_touching};
-    float pos_3_NT[3] = {ang_3, x_2, y_not_touching};
     ErrorCode walk(int repetitions = 1);
     int nb_sequence = 10;
     float sequence[10][LEG_NB][3] = {
@@ -290,7 +285,7 @@ public:
          {ang_2, x_2, y_touching}}};
 
     const int extreme_values_motor[MOTOR_NB][4] = {
-        {115, 490, 865, 1},
+        {105, 480, 855, 1},
         {395, 500, 950, -1},
         {0, 500, 1000, -1},
         {125, 500, 875, -1},

@@ -20,9 +20,9 @@ void setup()
     droid_1->initialize(LMP1, LMP2, LMP_PWM, REC_RX, REC_TX, REC_STATE);
     droid_1->set_parking_position(&parking_pos);
     Serial.println("Start");
-    droid_1->park();
+    Serial.println(droid_1->park());
     delay(3000);
-    //droid_1->unpark();
+    Serial.println(droid_1->unpark());
 }
 
 void loop()

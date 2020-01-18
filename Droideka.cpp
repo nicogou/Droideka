@@ -245,8 +245,8 @@ ErrorCode Droideka::park(bool actually_move = true, int time = 500, int offset_t
     temp_action.set_time(time);
     temp_action.set_active();
 
-    ErrorCode res = in_position(*parking, temp_action, time);
-    if (res)
+    ErrorCode result = in_position(*parking, temp_action, time);
+    if (result == NO_ERROR)
     {
       temp_action.shoulders_active(false);
       if (actually_move)
