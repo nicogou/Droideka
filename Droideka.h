@@ -144,8 +144,9 @@ enum ErrorCode
     OUT_OF_BOUNDS_KNEE_ANGLE = 202,
 
     PARKING_POSITION_NOT_UPDATED = 300,
-    PREPARKING_POSITION_IMPOSSIBLE = 301,
+    PARKING_TRANSITION_POSITION_IMPOSSIBLE = 301,
     PARKING_POSITION_IMPOSSIBLE = 302,
+    STARTING_WALKING_POSITION_IMPOSSIBLE = 303,
 
     POSITION_UNREACHABLE = 400,
 };
@@ -210,10 +211,9 @@ public:
 
     void set_parking_position(Droideka_Position *park);
     void set_parking_position(float park[LEG_NB][3]);
-    Droideka_Position *parking;
     bool parking_updated = false;
-    ErrorCode park(bool actually_move = true, int time = 500, int offset_time = 500);
-    ErrorCode unpark();
+    ErrorCode park(int time = 500, int offset_time = 500);
+    ErrorCode unpark(int time = 500, int offset_time = 500);
 
     int throttle_x;
     int throttle_y;
@@ -231,11 +231,14 @@ public:
     float x_2 = 4.3;
     float x_3 = 7.0;
     float y_touching = -12.0;
-    float y_not_touching = -8;
+    float y_not_touching = -8.0;
     float starting_position[LEG_NB][3] = {{ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}, {ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}};
+    float parking_transition[LEG_NB][3] = {{ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}, {ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}};
     Droideka_Position *starting_position_walking = new Droideka_Position(starting_position);
+    Droideka_Position *parking_transition_position = new Droideka_Position(parking_transition);
+    Droideka_Position *parking_position;
 
-    ErrorCode walk(int repetitions = 1);
+    ErrorCode walk(int repetitions = 1, int time = 500, int offset_time = 500);
     int nb_sequence = 10;
     float sequence[10][LEG_NB][3] = {
         {{ang_1, x_1, y_touching},

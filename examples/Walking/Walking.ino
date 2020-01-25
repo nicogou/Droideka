@@ -26,7 +26,7 @@ void setup()
 
     Serial.println("Start");
     droid_1->walk(5);
-    Serial.println(droid_1->park(true, 2000, 2000));
+    Serial.println(droid_1->park(2000, 2000));
 }
 
 void loop()

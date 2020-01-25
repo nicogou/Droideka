@@ -222,7 +222,7 @@ void Droideka::set_parking_position(Droideka_Position *park)
 {
   if (park->valid_position)
   {
-    parking = park;
+    parking_position = park;
     parking_updated = true;
   }
 }
@@ -232,35 +232,40 @@ void Droideka::set_parking_position(float park[LEG_NB][3])
   Droideka_Position *temp = new Droideka_Position(park);
   if (temp->valid_position)
   {
-    parking = temp;
+    parking_position = temp;
     parking_updated = true;
   }
 }
 
-ErrorCode Droideka::park(bool actually_move = true, int time = 500, int offset_time = 500)
+ErrorCode Droideka::park(int time = 500, int offset_time = 500)
 {
   if (parking_updated)
   {
     Action temp_action;
-    temp_action.set_time(time);
-    temp_action.set_active();
+    ErrorCode result;
 
-    ErrorCode result = in_position(*parking, temp_action, time);
+    result = in_position(*parking_transition_position, temp_action, time);
     if (result == NO_ERROR)
     {
-      temp_action.shoulders_active(false);
-      if (actually_move)
-      {
-        act(&temp_action);
-        delay(time + offset_time);
-        temp_action.set_active();
-        act(&temp_action);
-        delay(time + offset_time);
-      }
+      temp_action.set_active();
+      act(&temp_action);
+      delay(time + offset_time);
     }
     else
     {
-      return PREPARKING_POSITION_IMPOSSIBLE;
+      return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
+    }
+
+    result = in_position(*parking_position, temp_action, time);
+    if (result == NO_ERROR)
+    {
+      temp_action.set_active();
+      act(&temp_action);
+      delay(time + offset_time);
+    }
+    else
+    {
+      return PARKING_POSITION_IMPOSSIBLE;
     }
 
     return NO_ERROR;
@@ -271,38 +276,42 @@ ErrorCode Droideka::park(bool actually_move = true, int time = 500, int offset_t
   }
 }
 
-ErrorCode Droideka::unpark()
+ErrorCode Droideka::unpark(int time = 500, int offset_time = 500)
 {
-  int time = 500;
-  int time_offset = 500;
   Action unparking;
 
   ErrorCode result;
-  result = in_position(*starting_position_walking, unparking, time);
+  result = in_position(*parking_transition_position, unparking, time);
   if (result == NO_ERROR)
   {
     unparking.set_active();
-    unparking.knees_active(false);
-    unparking.hips_active(false);
     act(&unparking);
-    delay(time + time_offset);
-    unparking.set_active();
-    act(&unparking);
-    delay(time + time_offset);
+    delay(time + offset_time);
   }
   else
   {
     unparking.set_active(false);
-    return result;
+    return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
+  }
+
+  result = in_position(*starting_position_walking, unparking, time);
+  if (result == NO_ERROR)
+  {
+    unparking.set_active();
+    act(&unparking);
+    delay(time + offset_time);
+  }
+  else
+  {
+    unparking.set_active(false);
+    return STARTING_WALKING_POSITION_IMPOSSIBLE;
   }
 
   return NO_ERROR;
 }
 
-ErrorCode Droideka::walk(int repetitions = 1)
+ErrorCode Droideka::walk(int repetitions = 1, int time = 500, int offset_time = 500)
 {
-  int time = 500;
-  int time_offset = 10;
   Action walking;
   Droideka_Position next_pos = *starting_position_walking;
   ErrorCode result;
@@ -311,7 +320,7 @@ ErrorCode Droideka::walk(int repetitions = 1)
   {
     walking.set_active();
     act(&walking);
-    delay(time + time_offset);
+    delay(time + offset_time);
   }
   else
   {
@@ -335,7 +344,7 @@ ErrorCode Droideka::walk(int repetitions = 1)
       {
         walking.set_active();
         act(&walking);
-        delay(time + time_offset);
+        delay(time + offset_time);
       }
       else
       {
