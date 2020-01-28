@@ -105,6 +105,7 @@ struct Action
 struct Droideka_Position
 {
     float legs[LEG_NB][3]; // For each leg, id 0 stores the shoulder angle in degrees, id 1 and id 2 store resp. the x and y coordinates with respect to the leg frame.
+                           // LEG_NB : id 0 is the front left leg, id 1 is the front right leg, id 2 is the rear left leg, id 3 is the rear right leg.
     bool valid_position;
 
     Droideka_Position(float position[LEG_NB][3])
@@ -132,8 +133,17 @@ struct Droideka_Position
     }
 };
 
+enum DroidekaMode
+{
+    WALKING = 0,
+    ROLLING = 1,
+};
+typedef enum DroidekaMode DroidekaMode;
+
 enum ErrorCode
 {
+    WAITING = 0,
+
     NO_ERROR = 1,
 
     WRONG_MOTOR_SPECIFIED = 100,
@@ -144,10 +154,15 @@ enum ErrorCode
     OUT_OF_BOUNDS_KNEE_ANGLE = 202,
 
     PARKING_POSITION_NOT_UPDATED = 300,
-    PREPARKING_POSITION_IMPOSSIBLE = 301,
+    PARKING_TRANSITION_POSITION_IMPOSSIBLE = 301,
     PARKING_POSITION_IMPOSSIBLE = 302,
+    STARTING_WALKING_POSITION_IMPOSSIBLE = 303,
 
     POSITION_UNREACHABLE = 400,
+
+    ROBOT_ALREADY_PARKED = 500,
+    ROBOT_ALREADY_UNPARKED = 501,
+    ROBOT_PARKED_WHEN_ASKED_TO_WALK = 502,
 };
 typedef enum ErrorCode ErrorCode;
 
@@ -194,7 +209,10 @@ public:
     void initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state); // Class initializer.
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
     bool receive_data();
+    ErrorCode move_forward(int throttle);
     ErrorCode move(char motor = 'l', int speed = 0);
+    DroidekaMode get_mode();
+    ErrorCode change_mode();
 
     ErrorCode in_position(Droideka_Position pos, Action &pos_act, int time);
     void act(Action *action);
@@ -210,16 +228,24 @@ public:
 
     void set_parking_position(Droideka_Position *park);
     void set_parking_position(float park[LEG_NB][3]);
-    Droideka_Position *parking;
     bool parking_updated = false;
-    ErrorCode park(bool actually_move = true, int time = 500, int offset_time = 500);
-    ErrorCode unpark();
+    ErrorCode park(int time = 500, int offset_time = 500);
+    ErrorCode unpark(int time = 500, int offset_time = 500);
 
     int throttle_x;
     int throttle_y;
     int button1;
     int button2;
     int button3;
+    bool button1_pushed();
+    bool button1_clicked();
+    bool button1_released();
+    bool button2_pushed();
+    bool button2_clicked();
+    bool button2_released();
+    bool button3_pushed();
+    bool button3_clicked();
+    bool button3_released();
 
     State *read_debug_board_positions();
 
@@ -231,13 +257,21 @@ public:
     float x_2 = 4.3;
     float x_3 = 7.0;
     float y_touching = -12.0;
-    float y_not_touching = -8;
+    float y_not_touching = -6.0;
     float starting_position[LEG_NB][3] = {{ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}, {ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}};
+    float parking_transition[LEG_NB][3] = {{ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}, {ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}};
     Droideka_Position *starting_position_walking = new Droideka_Position(starting_position);
+    Droideka_Position *parking_transition_position = new Droideka_Position(parking_transition);
+    Droideka_Position *parking_position;
 
-    ErrorCode walk(int repetitions = 1);
-    int nb_sequence = 10;
-    float sequence[10][LEG_NB][3] = {
+    ErrorCode walk(int time = 500, int offset_time = 500);
+    double last_action_millis = 0;
+    int time_last_action;
+    int offset_time_last_action;
+    static const int nb_walking_sequence = 10;
+    int current_position = -1; // -1 is parked, 0 to 9 is the id of the position in the walking sequence. Thus 9 is the starting walking position.
+    bool stoppable_walking_sequence[nb_walking_sequence] = {false, true, true, false, true, false, true, true, false, true};
+    float walking_sequence[nb_walking_sequence][LEG_NB][3] = {
         {{ang_1, x_1, y_touching},
          {ang_2_3, x_2, y_not_touching},
          {ang_1, x_1, y_touching},
