@@ -38,6 +38,51 @@ bool Droideka::receive_data()
   return false;
 }
 
+bool Droideka::button1_pushed()
+{
+  return rec.but1Pushed();
+}
+
+bool Droideka::button1_clicked()
+{
+  return rec.but1Clicked();
+}
+
+bool Droideka::button1_released()
+{
+  return rec.but1Released();
+}
+
+bool Droideka::button2_pushed()
+{
+  return rec.but2Pushed();
+}
+
+bool Droideka::button2_clicked()
+{
+  return rec.but2Clicked();
+}
+
+bool Droideka::button2_released()
+{
+  return rec.but2Released();
+}
+
+bool Droideka::button3_pushed()
+{
+  return rec.but3Pushed();
+}
+
+bool Droideka::button3_clicked()
+{
+  return rec.but3Clicked();
+}
+
+bool Droideka::button3_released()
+{
+  return rec.but3Released();
+}
+
 ErrorCode Droideka::move(char motor = 'l', int speed = 0)
 {
   int pin_1;
@@ -74,9 +119,9 @@ ErrorCode Droideka::move(char motor = 'l', int speed = 0)
   }
 
   int mapped_speed = abs(speed);
-  mapped_speed = map(mapped_speed, 0, 100, 0, 127);
+  mapped_speed = map(mapped_speed, 0, 100, 0, 255);
   // Choose speed
-  if (mapped_speed >= 0 && mapped_speed < 128)
+  if (mapped_speed >= 0 && mapped_speed < 256)
   {
     analogWrite(pin_pwm, mapped_speed);
   }
@@ -170,6 +215,45 @@ float Droideka::encoder_to_deg(int motor_id, int encoder_angle)
   return deg_angle;
 }
 
+ErrorCode Droideka::move_forward(int throttle)
+{
+  if (get_mode() == WALKING)
+  {
+    if (throttle > 0)
+    {
+      walk(250, 10);
+    }
+  }
+  else if (get_mode() == ROLLING)
+  {
+    move('l', throttle_x);
+  }
+}
+
+DroidekaMode Droideka::get_mode()
+{
+  if (current_position == -1)
+  {
+    return ROLLING;
+  }
+  else
+  {
+    return WALKING;
+  }
+}
+
+ErrorCode Droideka::change_mode()
+{
+  if (get_mode() == WALKING)
+  {
+    park(1000, 0);
+  }
+  else if (get_mode() == ROLLING)
+  {
+    unpark(1000, 0);
+  }
+}
+
 ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time)
 {
   float knee_angle_sign;
@@ -249,12 +333,22 @@ ErrorCode Droideka::park(int time = 500, int offset_time = 500)
     {
       Action temp_action;
       ErrorCode result;
+      Droideka_Position temp_transition_pos = *parking_transition_position;
 
-      result = in_position(*parking_transition_position, temp_action, time);
+      for (int jj = 0; jj < LEG_NB; jj++)
+      {
+        for (int kk = 0; kk < 2; kk++)
+        {
+          temp_transition_pos.legs[jj][kk] = walking_sequence[current_position][jj][kk];
+        }
+        temp_transition_pos.legs[jj][2] = y_not_touching;
+      }
+
+      result = in_position(temp_transition_pos, temp_action, time);
       if (result == NO_ERROR)
       {
         temp_action.set_active();
-        temp_action.shoulders_active(false);
+        // temp_action.shoulders_active(false);
         act(&temp_action);
         last_action_millis = millis();         // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
         time_last_action = time;               // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
@@ -347,57 +441,46 @@ ErrorCode Droideka::walk(int time = 500, int offset_time = 500)
   }
   else
   {
-    int nb_steps = 1;
     int temp_current_pos;
-    temp_current_pos = (current_position + nb_steps) % nb_walking_sequence;
-    while (stoppable_walking_sequence[temp_current_pos] == false)
-    {
-      nb_steps += 1;
-      temp_current_pos = (current_position + nb_steps) % nb_walking_sequence;
-    }
 
     Action walking;
     Droideka_Position next_pos = *starting_position_walking;
     ErrorCode result;
     double current_action_millis;
 
-    for (int ii = 1; ii < nb_steps + 1; ii++)
+    temp_current_pos = (current_position + 1) % nb_walking_sequence;
+    for (int jj = 0; jj < LEG_NB; jj++)
     {
-      temp_current_pos = (current_position + ii) % nb_walking_sequence;
-      for (int jj = 0; jj < LEG_NB; jj++)
+      for (int kk = 0; kk < 3; kk++)
       {
-        for (int kk = 0; kk < 3; kk++)
-        {
-          next_pos.legs[jj][kk] = walking_sequence[temp_current_pos][jj][kk];
-        }
+        next_pos.legs[jj][kk] = walking_sequence[temp_current_pos][jj][kk];
       }
-      result = in_position(next_pos, walking, time);
-      if (result == NO_ERROR)
+    }
+    result = in_position(next_pos, walking, time);
+    if (result == NO_ERROR)
+    {
+      walking.set_active();
+
+      current_action_millis = millis();
+      if (current_action_millis - last_action_millis > time_last_action + offset_time_last_action)
       {
-        walking.set_active();
-
-        current_action_millis = millis();
-        if (current_action_millis - last_action_millis > time_last_action + offset_time_last_action)
-        {
-          act(&walking);
-          time_last_action = time;
-          offset_time_last_action = offset_time;
-          last_action_millis = current_action_millis;
-        }
-        else
-        {
-          return WAITING;
-        }
-
-        // delay(time + offset_time);
+        act(&walking);
+        last_action_millis = current_action_millis;
+        time_last_action = time;
+        offset_time_last_action = offset_time;
       }
       else
       {
-        walking.set_active(false);
-        return result;
+        return WAITING;
       }
     }
+    else
+    {
+      walking.set_active(false);
+      return result;
+    }
 
+    current_position = temp_current_pos;
     return NO_ERROR;
   }
 }

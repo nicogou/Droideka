@@ -133,6 +133,13 @@ struct Droideka_Position
     }
 };
 
+enum DroidekaMode
+{
+    WALKING = 0,
+    ROLLING = 1,
+};
+typedef enum DroidekaMode DroidekaMode;
+
 enum ErrorCode
 {
     WAITING = 0,
@@ -202,7 +209,10 @@ public:
     void initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state); // Class initializer.
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
     bool receive_data();
+    ErrorCode move_forward(int throttle);
     ErrorCode move(char motor = 'l', int speed = 0);
+    DroidekaMode get_mode();
+    ErrorCode change_mode();
 
     ErrorCode in_position(Droideka_Position pos, Action &pos_act, int time);
     void act(Action *action);
@@ -227,6 +237,15 @@ public:
     int button1;
     int button2;
     int button3;
+    bool button1_pushed();
+    bool button1_clicked();
+    bool button1_released();
+    bool button2_pushed();
+    bool button2_clicked();
+    bool button2_released();
+    bool button3_pushed();
+    bool button3_clicked();
+    bool button3_released();
 
     State *read_debug_board_positions();
 
@@ -238,7 +257,7 @@ public:
     float x_2 = 4.3;
     float x_3 = 7.0;
     float y_touching = -12.0;
-    float y_not_touching = -8.0;
+    float y_not_touching = -6.0;
     float starting_position[LEG_NB][3] = {{ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}, {ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}};
     float parking_transition[LEG_NB][3] = {{ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}, {ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}};
     Droideka_Position *starting_position_walking = new Droideka_Position(starting_position);

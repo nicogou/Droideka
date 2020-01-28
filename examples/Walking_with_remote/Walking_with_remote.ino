@@ -25,18 +25,22 @@ void setup()
     droid_1->set_parking_position(&parking_pos);
 
     Serial.println("Start");
-    droid_1->unpark(2000, 2000);
+    //Serial.println(droid_1->unpark(2000, 50));
     //droid_1->walk(5);
     //Serial.println(droid_1->park(2000, 2000));
 }
 
 void loop()
 {
-    if (droid_1->receive_data())
+    bool test = droid_1->receive_data();
+    // Serial.println(test);
+    if (test)
     {
-        if (droid_1->throttle_x > 10)
+        // Serial.println(droid_1->throttle_x);
+        droid_1->move_forward(droid_1->throttle_x);
+        if (droid_1->button2_clicked())
         {
-            droid_1->walk();
+            droid_1->change_mode();
         }
     }
 }
