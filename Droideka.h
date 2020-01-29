@@ -209,8 +209,8 @@ public:
     void initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state); // Class initializer.
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
     bool receive_data();
-    ErrorCode move_forward(int throttle);
-    ErrorCode move(char motor = 'l', int speed = 0);
+    ErrorCode move(int throttle);
+    ErrorCode roll(char motor = 'l', int speed = 0);
     DroidekaMode get_mode();
     ErrorCode change_mode();
 
@@ -237,6 +237,10 @@ public:
     int button1;
     int button2;
     int button3;
+    bool forward();
+    bool backward();
+    bool leftward();
+    bool rightward();
     bool button1_pushed();
     bool button1_clicked();
     bool button1_released();

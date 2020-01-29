@@ -38,6 +38,42 @@ bool Droideka::receive_data()
   return false;
 }
 
+bool Droideka::forward()
+{
+  if (throttle_x > 0)
+  {
+    return true;
+  }
+  return false;
+}
+
+bool Droideka::backward()
+{
+  if (throttle_x < 0)
+  {
+    return true;
+  }
+  return false;
+}
+
+bool Droideka::leftward()
+{
+  if (throttle_y > 0)
+  {
+    return true;
+  }
+  return false;
+}
+
+bool Droideka::rightward()
+{
+  if (throttle_y < 0)
+  {
+    return true;
+  }
+  return false;
+}
+
 bool Droideka::button1_pushed()
 {
   return rec.but1Pushed();
@@ -83,7 +119,7 @@ bool Droideka::button3_released()
   return rec.but3Released();
 }
 
-ErrorCode Droideka::move(char motor = 'l', int speed = 0)
+ErrorCode Droideka::roll(char motor = 'l', int speed = 0)
 {
   int pin_1;
   int pin_2;
@@ -215,18 +251,15 @@ float Droideka::encoder_to_deg(int motor_id, int encoder_angle)
   return deg_angle;
 }
 
-ErrorCode Droideka::move_forward(int throttle)
+ErrorCode Droideka::move(int throttle)
 {
   if (get_mode() == WALKING)
   {
-    if (throttle > 0)
-    {
-      walk(250, 10);
-    }
+    walk(1000, 10);
   }
   else if (get_mode() == ROLLING)
   {
-    move('l', throttle_x);
+    roll('l', throttle);
   }
 }
 
@@ -442,13 +475,23 @@ ErrorCode Droideka::walk(int time = 500, int offset_time = 500)
   else
   {
     int temp_current_pos;
+    int forward_or_backward = 0;
+    if (forward())
+    {
+      forward_or_backward = 1;
+    }
+    else if (backward())
+    {
+      forward_or_backward = -1;
+    }
 
     Action walking;
     Droideka_Position next_pos = *starting_position_walking;
     ErrorCode result;
     double current_action_millis;
 
-    temp_current_pos = (current_position + 1) % nb_walking_sequence;
+    temp_current_pos = max(current_position + forward_or_backward, current_position + forward_or_backward + nb_walking_sequence);
+    temp_current_pos = temp_current_pos % nb_walking_sequence;
     for (int jj = 0; jj < LEG_NB; jj++)
     {
       for (int kk = 0; kk < 3; kk++)
