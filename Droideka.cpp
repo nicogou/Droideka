@@ -119,23 +119,11 @@ bool Droideka::button3_released()
   return rec.but3Released();
 }
 
-ErrorCode Droideka::roll(char motor = 'l', int speed = 0)
+ErrorCode Droideka::roll(int speed = 0)
 {
-  int pin_1;
-  int pin_2;
-  int pin_pwm;
-
-  // Choose motor pins
-  if (motor == 'l')
-  {
-    pin_1 = longitudinal_mot_pin_1;
-    pin_2 = longitudinal_mot_pin_2;
-    pin_pwm = longitudinal_mot_pin_pwm;
-  }
-  else
-  {
-    return WRONG_MOTOR_SPECIFIED;
-  }
+  int pin_1 = longitudinal_mot_pin_1;
+  int pin_2 = longitudinal_mot_pin_2;
+  int pin_pwm = longitudinal_mot_pin_pwm;
 
   // Choose forward or backward motion
   if (speed > 0)
@@ -192,6 +180,7 @@ State *Droideka::read_debug_board_positions()
   for (uint8_t i = 0; i < MOTOR_NB; i++)
   {
     this->servoBus_front->requestPosition(this->motor_ids[i]);
+    this->servoBus_back->requestPosition(this->motor_ids[i]);
   }
   return &lastState_;
 }
@@ -246,7 +235,7 @@ int Droideka::deg_to_encoder(int motor_id, float deg_angle)
 float Droideka::encoder_to_deg(int motor_id, int encoder_angle)
 {
   float deg_angle;
-  deg_angle = (encoder_angle - extreme_values_motor[motor_id][1]) * servo_deg_ratio * extreme_values_motor[motor_id][3];
+  deg_angle = (encoder_angle - extreme_values_motor[motor_id][1]) * servo_deg_ratio / extreme_values_motor[motor_id][3];
 
   return deg_angle;
 }
@@ -259,7 +248,7 @@ ErrorCode Droideka::move(int throttle)
   }
   else if (get_mode() == ROLLING)
   {
-    roll('l', throttle);
+    roll(throttle);
   }
 }
 
