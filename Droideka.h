@@ -3,168 +3,7 @@
 
 #include <Receiver.h>
 #include <ServoBus.h>
-
-#define DEBUG_BOARD_BAUD_RATE 115200
-
-#define MOTOR_NB 12
-#define LEG_NB 4
-#define TIBIA_LENGTH 7
-#define HIP_LENGTH 7
-
-struct State
-{
-    unsigned long timestamp;
-    int positions[MOTOR_NB];
-    bool is_position_updated[MOTOR_NB];
-    bool correct_motor_reading;
-};
-
-struct Action
-{
-    int commands[MOTOR_NB][3]; // [position, span, activate]
-    void set_time(int time)
-    {
-        for (int ii = 0; ii < MOTOR_NB; ii++)
-        {
-            commands[ii][1] = time;
-        }
-    }
-    void set_active(bool activate = true)
-    {
-        for (int ii = 0; ii < MOTOR_NB; ii++)
-        {
-            if (activate)
-            {
-                commands[ii][2] = 1;
-            }
-            else
-            {
-                commands[ii][2] = 0;
-            }
-        }
-    }
-
-    void shoulders_active(bool activate = true)
-    {
-        for (int ii = 0; ii < LEG_NB; ii++)
-        {
-            if (activate)
-            {
-                commands[3 * ii][2] = 1;
-            }
-            else
-            {
-                commands[3 * ii][2] = 0;
-            }
-        }
-    }
-
-    void hips_active(bool activate = true)
-    {
-        for (int ii = 0; ii < LEG_NB; ii++)
-        {
-            if (activate)
-            {
-                commands[3 * ii + 1][2] = 1;
-            }
-            else
-            {
-                commands[3 * ii + 1][2] = 0;
-            }
-        }
-    }
-
-    void knees_active(bool activate = true)
-    {
-        for (int ii = 0; ii < LEG_NB; ii++)
-        {
-            if (activate)
-            {
-                commands[3 * ii + 2][2] = 1;
-            }
-            else
-            {
-                commands[3 * ii + 2][2] = 0;
-            }
-        }
-    }
-
-    void motor_active(int id, bool activate)
-    {
-        if (activate)
-        {
-            commands[id][2] = 1;
-        }
-        else
-        {
-            commands[id][2] = 0;
-        }
-    }
-};
-
-struct Droideka_Position
-{
-    float legs[LEG_NB][3]; // For each leg, id 0 stores the shoulder angle in degrees, id 1 and id 2 store resp. the x and y coordinates with respect to the leg frame.
-                           // LEG_NB : id 0 is the front left leg, id 1 is the front right leg, id 2 is the rear left leg, id 3 is the rear right leg.
-    bool valid_position;
-
-    Droideka_Position(float position[LEG_NB][3])
-    {
-        for (int ii = 0; ii < LEG_NB; ii++)
-        {
-            if (position[ii][1] * position[ii][1] + position[ii][2] * position[ii][2] > (HIP_LENGTH + TIBIA_LENGTH) * (HIP_LENGTH + TIBIA_LENGTH))
-            {
-                valid_position = false;
-                break;
-            }
-            else
-            {
-                valid_position = true;
-            }
-        }
-
-        for (int ii = 0; ii < LEG_NB; ii++)
-        {
-            for (int jj = 0; jj < 3; jj++)
-            {
-                legs[ii][jj] = position[ii][jj];
-            }
-        }
-    }
-};
-
-enum DroidekaMode
-{
-    WALKING = 0,
-    ROLLING = 1,
-};
-typedef enum DroidekaMode DroidekaMode;
-
-enum ErrorCode
-{
-    WAITING = 0,
-
-    NO_ERROR = 1,
-
-    WRONG_MOTOR_SPECIFIED = 100,
-    OUT_OF_BOUNDS_SPEED_SPECIFIED = 101,
-
-    OUT_OF_BOUNDS_SHOULDER_ANGLE = 200,
-    OUT_OF_BOUNDS_HIP_ANGLE = 201,
-    OUT_OF_BOUNDS_KNEE_ANGLE = 202,
-
-    PARKING_POSITION_NOT_UPDATED = 300,
-    PARKING_TRANSITION_POSITION_IMPOSSIBLE = 301,
-    PARKING_POSITION_IMPOSSIBLE = 302,
-    STARTING_WALKING_POSITION_IMPOSSIBLE = 303,
-
-    POSITION_UNREACHABLE = 400,
-
-    ROBOT_ALREADY_PARKED = 500,
-    ROBOT_ALREADY_UNPARKED = 501,
-    ROBOT_PARKED_WHEN_ASKED_TO_WALK = 502,
-};
-typedef enum ErrorCode ErrorCode;
+#include <utils/utils.h>
 
 class Droideka
 {
@@ -253,17 +92,8 @@ public:
 
     State *read_debug_board_positions();
 
-    float ang_1 = 45.0;
-    float ang_2 = -11.0;
-    float ang_3 = 65.0;
-    float ang_2_3 = (ang_2 + ang_3) / 2;
-    float x_1 = 4.7;
-    float x_2 = 4.3;
-    float x_3 = 7.0;
-    float y_touching = -12.0;
-    float y_not_touching = -6.0;
-    float starting_position[LEG_NB][3] = {{ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}, {ang_1, x_1, y_touching}, {ang_2, x_2, y_touching}};
-    float parking_transition[LEG_NB][3] = {{ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}, {ang_1, x_1, y_not_touching}, {ang_2, x_2, y_not_touching}};
+    float starting_position[LEG_NB][3] = {{ANG_1, X_1, Y_TOUCHING}, {ANG_2, X_2, Y_TOUCHING}, {ANG_1, X_1, Y_TOUCHING}, {ANG_2, X_2, Y_TOUCHING}};
+    float parking_transition[LEG_NB][3] = {{ANG_1, X_1, Y_NOT_TOUCHING}, {ANG_2, X_2, Y_NOT_TOUCHING}, {ANG_1, X_1, Y_NOT_TOUCHING}, {ANG_2, X_2, Y_NOT_TOUCHING}};
     Droideka_Position *starting_position_walking = new Droideka_Position(starting_position);
     Droideka_Position *parking_transition_position = new Droideka_Position(parking_transition);
     Droideka_Position *parking_position;
@@ -274,53 +104,52 @@ public:
     int offset_time_last_action;
     static const int nb_walking_sequence = 10;
     int current_position = -1; // -1 is parked, 0 to 9 is the id of the position in the walking sequence. Thus 9 is the starting walking position.
-    bool stoppable_walking_sequence[nb_walking_sequence] = {false, true, true, false, true, false, true, true, false, true};
     float walking_sequence[nb_walking_sequence][LEG_NB][3] = {
-        {{ang_1, x_1, y_touching},
-         {ang_2_3, x_2, y_not_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching}},
-        {{ang_1, x_1, y_touching},
-         {ang_3, x_3, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2_3, X_2, Y_NOT_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_3, X_3, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING}},
 
-        {{ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_3, x_3, y_touching},
-         {ang_1, x_1, y_touching}},
+        {{ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_3, X_3, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING}},
 
-        {{ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2_3, x_2, y_not_touching},
-         {ang_1, x_1, y_touching}},
-        {{ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching}},
+        {{ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2_3, X_2, Y_NOT_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING}},
+        {{ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING}},
 
-        {{ang_2_3, x_2, y_not_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching}},
-        {{ang_3, x_3, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching}},
+        {{ANG_2_3, X_2, Y_NOT_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING}},
+        {{ANG_3, X_3, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING}},
 
-        {{ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_3, x_3, y_touching}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_3, X_3, Y_TOUCHING}},
 
-        {{ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2_3, x_2, y_not_touching}},
-        {{ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching},
-         {ang_1, x_1, y_touching},
-         {ang_2, x_2, y_touching}}};
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2_3, X_2, Y_NOT_TOUCHING}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING}}};
 
     const int extreme_values_motor[MOTOR_NB][4] = {
         {105, 480, 855, 1},

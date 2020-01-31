@@ -374,7 +374,7 @@ ErrorCode Droideka::park(int time = 500, int offset_time = 500)
         {
           temp_transition_pos.legs[jj][kk] = walking_sequence[current_position][jj][kk];
         }
-        temp_transition_pos.legs[jj][2] = y_not_touching;
+        temp_transition_pos.legs[jj][2] = Y_NOT_TOUCHING;
       }
 
       result = in_position(temp_transition_pos, temp_action, time);
