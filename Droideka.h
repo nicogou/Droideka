@@ -151,6 +151,50 @@ public:
          {ANG_1, X_1, Y_TOUCHING},
          {ANG_2, X_2, Y_TOUCHING}}};
 
+    ErrorCode slide(int time = 500, int offset_time = 500);
+    static const int nb_sliding_sequence = 9;
+    float sliding_sequence[nb_walking_sequence][LEG_NB][3] = {
+        {{ANG_4, X_4, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING},
+         {ANG_4, X_4, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING}},
+
+        {{ANG_4, X_4, Y_NOT_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING},
+         {ANG_4, X_4, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING},
+         {ANG_4, X_4, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING}},
+
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_5, X_5, Y_NOT_TOUCHING},
+         {ANG_4, X_4, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_4, X_4, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING}},
+
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_4, X_4, Y_NOT_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_5, X_5, Y_TOUCHING}},
+
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_5, X_5, Y_NOT_TOUCHING}},
+        {{ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING},
+         {ANG_1, X_1, Y_TOUCHING},
+         {ANG_2, X_2, Y_TOUCHING}}};
+
     const int extreme_values_motor[MOTOR_NB][4] = {
         {105, 480, 855, 1},
         {395, 500, 950, -1},

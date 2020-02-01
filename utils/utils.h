@@ -9,10 +9,16 @@
 #define ANG_2 -11.0
 #define ANG_3 65.0
 #define ANG_2_3 (ANG_2 + ANG_3) / 2
+#define ANG_4 68.3 // Sliding robot (after ANG_1)
+#define ANG_1_4 (ANG_1 + ANG_4) / 2
+#define ANG_5 -7.51 // Sliding robot (after ANG_2)
+#define ANG_2_5 (ANG_2 + ANG_5) / 2
 
 #define X_1 4.7
 #define X_2 4.3
 #define X_3 7.0
+#define X_4 3.57 // Sliding robot (after X_1)
+#define X_5 6.27 // Sliding robot (after X_2)
 #define Y_TOUCHING -12.0
 #define Y_NOT_TOUCHING -6.0
 
@@ -168,5 +174,6 @@ enum ErrorCode
     ROBOT_ALREADY_PARKED = 500,
     ROBOT_ALREADY_UNPARKED = 501,
     ROBOT_PARKED_WHEN_ASKED_TO_WALK = 502,
+    ROBOT_NOT_IN_POSITION_TO_SLIDE = 503,
 };
 typedef enum ErrorCode ErrorCode;
