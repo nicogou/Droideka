@@ -5,13 +5,13 @@
 #define TIBIA_LENGTH 7
 #define HIP_LENGTH 7
 
-#define ANG_1 45.0
-#define ANG_2 -19.6
-#define ANG_3 65.0
+#define ANG_1 44.0
+#define ANG_2 -11.0
+#define ANG_3 60.0
 #define ANG_2_3 (ANG_2 + ANG_3) / 2
 
-#define X_1 4.78
-#define X_2 3.59
+#define X_1 5.56
+#define X_2 4.08
 #define X_3 8.0
 #define Y_TOUCHING -11.0
 #define Y_NOT_TOUCHING -6.0
