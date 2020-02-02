@@ -14,25 +14,25 @@
 #define ANG_5 -7.51 // Sliding robot (after ANG_2)
 #define ANG_2_5 (ANG_2 + ANG_5) / 2
 
-#define ANG_T_FL 61.5
-#define ANG_T_FR -16.1
-#define ANG_T_RL 30.2
-#define ANG_T_RR -1.06
-#define X_PT_FL 4.7
-#define X_PT_FR 5.77
-#define X_PT_RL 5.13
-#define X_PT_RR 1.11
-#define X_NT_FL 4.98
-#define X_NT_FR 1.63
-#define X_NT_RL 4.66
-#define X_NT_RR 5.95
+#define ANG_T_FL 76.8
+#define ANG_T_FR -19.0
+#define ANG_T_RL 18.5
+#define ANG_T_RR 20.5
+#define X_PT_FL 5.06
+#define X_PT_FR 7.28
+#define X_PT_RL 5.89
+#define X_PT_RR 2.31
+#define X_NT_FL 5.30
+#define X_NT_FR 2.20
+#define X_NT_RL 5.03
+#define X_NT_RR 7.67
 
 #define X_1 4.7
 #define X_2 4.3
 #define X_3 7.0
 #define X_4 3.57 // Sliding robot (after X_1)
 #define X_5 6.27 // Sliding robot (after X_2)
-#define Y_TOUCHING -12.0
+#define Y_TOUCHING -11.0
 #define Y_NOT_TOUCHING -6.0
 
 struct State
