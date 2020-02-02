@@ -244,7 +244,7 @@ ErrorCode Droideka::move(int throttle)
 {
   if (get_mode() == WALKING)
   {
-    walk(1000, 10);
+    twist(1000, 10);
   }
   else if (get_mode() == ROLLING)
   {
@@ -519,7 +519,7 @@ ErrorCode Droideka::walk(int time = 500, int offset_time = 500)
 
 ErrorCode Droideka::slide(int time = 500, int offset_time = 500)
 {
-  if (current_position != 9)
+  if (current_position == -1)
   {
     return ROBOT_NOT_IN_POSITION_TO_SLIDE;
   }
@@ -548,6 +548,68 @@ ErrorCode Droideka::slide(int time = 500, int offset_time = 500)
       for (int kk = 0; kk < 3; kk++)
       {
         next_pos.legs[jj][kk] = sliding_sequence[temp_current_pos][jj][kk];
+      }
+    }
+    result = in_position(next_pos, walking, time);
+    if (result == NO_ERROR)
+    {
+      walking.set_active();
+
+      current_action_millis = millis();
+      if (current_action_millis - last_action_millis > time_last_action + offset_time_last_action)
+      {
+        act(&walking);
+        last_action_millis = current_action_millis;
+        time_last_action = time;
+        offset_time_last_action = offset_time;
+      }
+      else
+      {
+        return WAITING;
+      }
+    }
+    else
+    {
+      walking.set_active(false);
+      return result;
+    }
+
+    current_position = temp_current_pos;
+    return NO_ERROR;
+  }
+}
+
+ErrorCode Droideka::twist(int time = 500, int offset_time = 500)
+{
+  if (current_position == -1)
+  {
+    return ROBOT_NOT_IN_POSITION_TO_SLIDE;
+  }
+  else
+  {
+    int temp_current_pos;
+    int forward_or_backward = 0;
+    if (forward()) // TODO change to joystick sideways
+    {
+      forward_or_backward = 1;
+    }
+    else if (backward()) // TODO change to joystick sideways
+    {
+      forward_or_backward = -1;
+    }
+
+    Action walking;
+    Droideka_Position next_pos = *starting_position_walking;
+    ErrorCode result;
+    double current_action_millis;
+
+    temp_current_pos = max(current_position + forward_or_backward, current_position + forward_or_backward + nb_twisting_sequence);
+    temp_current_pos = temp_current_pos % nb_twisting_sequence;
+    for (int jj = 0; jj < LEG_NB; jj++)
+    {
+      for (int kk = 0; kk < 3; kk++)
+      {
+        next_pos.legs[jj][kk] = twisting_sequence[temp_current_pos][jj][kk];
       }
     }
     result = in_position(next_pos, walking, time);

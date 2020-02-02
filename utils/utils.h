@@ -14,6 +14,19 @@
 #define ANG_5 -7.51 // Sliding robot (after ANG_2)
 #define ANG_2_5 (ANG_2 + ANG_5) / 2
 
+#define ANG_T_FL 61.5
+#define ANG_T_FR -16.1
+#define ANG_T_RL 30.2
+#define ANG_T_RR -1.06
+#define X_PT_FL 4.7
+#define X_PT_FR 5.77
+#define X_PT_RL 5.13
+#define X_PT_RR 1.11
+#define X_NT_FL 4.98
+#define X_NT_FR 1.63
+#define X_NT_RL 4.66
+#define X_NT_RR 5.95
+
 #define X_1 4.7
 #define X_2 4.3
 #define X_3 7.0
