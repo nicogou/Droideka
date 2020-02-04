@@ -2,8 +2,8 @@
 
 Droideka::Droideka(Stream *debugBoardStream_front, Stream *debugBoardStream_back)
 {
-  servoBus_front = new ServoBus(debugBoardStream_front, servo_bus_write_pin);
-  servoBus_back = new ServoBus(debugBoardStream_back, servo_bus_write_pin);
+  servoBus_front = new ServoBus(debugBoardStream_front, servo_bus_write_pin_front);
+  servoBus_back = new ServoBus(debugBoardStream_back, servo_bus_write_pin_back);
   servoBus_front->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
   servoBus_back->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
 }
@@ -40,7 +40,7 @@ bool Droideka::receive_data()
 
 bool Droideka::forward()
 {
-  if (throttle_x > 0)
+  if (throttle_x > 0 && abs(throttle_x) > abs(throttle_y))
   {
     return true;
   }
@@ -49,16 +49,7 @@ bool Droideka::forward()
 
 bool Droideka::backward()
 {
-  if (throttle_x < 0)
-  {
-    return true;
-  }
-  return false;
-}
-
-bool Droideka::leftward()
-{
-  if (throttle_y > 0)
+  if (throttle_x < 0 && abs(throttle_x) > abs(throttle_y))
   {
     return true;
   }
@@ -67,7 +58,16 @@ bool Droideka::leftward()
 
 bool Droideka::rightward()
 {
-  if (throttle_y < 0)
+  if (throttle_y > 0 && abs(throttle_y) > abs(throttle_x))
+  {
+    return true;
+  }
+  return false;
+}
+
+bool Droideka::leftward()
+{
+  if (throttle_y < 0 && abs(throttle_y) > abs(throttle_x))
   {
     return true;
   }
@@ -244,7 +244,22 @@ ErrorCode Droideka::move(int throttle)
 {
   if (get_mode() == WALKING)
   {
-    twist(1000, 10);
+    /* TODO : find out what variable to change with the throttle : the easy one is the speed of the moves, the harder one is the
+     *        the easy one is the speed of the moves
+     *        the harder one is the reach of the move, i.e. how far the legs go (requires more computation)
+     */
+    if (forward() || backward())
+    {
+      walk(1000, 10);
+    }
+    else if (leftward() || rightward())
+    {
+      turn_left(1000, 10);
+    }
+    else
+    {
+      // IDEA: add a function to go back to unparked position from any intermediate position ? This seems complicated.
+    }
   }
   else if (get_mode() == ROLLING)
   {
@@ -254,7 +269,7 @@ ErrorCode Droideka::move(int throttle)
 
 DroidekaMode Droideka::get_mode()
 {
-  if (current_position == -1)
+  if (current_position == END_PARKING_SEQUENCE)
   {
     return ROLLING;
   }
@@ -324,146 +339,71 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
   }
 }
 
-void Droideka::set_parking_position(Droideka_Position *park)
-{
-  if (park->valid_position)
-  {
-    parking_position = park;
-    parking_updated = true;
-  }
-}
-
-void Droideka::set_parking_position(float park[LEG_NB][3])
-{
-  Droideka_Position *temp = new Droideka_Position(park);
-  if (temp->valid_position)
-  {
-    parking_position = temp;
-    parking_updated = true;
-  }
-}
-
 ErrorCode Droideka::park(int time = 500, int offset_time = 500)
 {
-  if (current_position == -1)
+  if (current_position == END_PARKING_SEQUENCE)
   {
     return ROBOT_ALREADY_PARKED;
   }
   else
   {
-    if (parking_updated)
+    for (int jj = 0; jj < LEG_NB; jj++)
     {
-      Action temp_action;
-      ErrorCode result;
-      Droideka_Position temp_transition_pos = *parking_transition_position;
-
-      for (int jj = 0; jj < LEG_NB; jj++)
+      for (int kk = 0; kk < 2; kk++)
       {
-        for (int kk = 0; kk < 2; kk++)
-        {
-          temp_transition_pos.legs[jj][kk] = walking_sequence[current_position][jj][kk];
-        }
-        temp_transition_pos.legs[jj][2] = Y_NOT_TOUCHING;
+        sequences[START_PARKING_SEQUENCE][jj][kk] = sequences[current_position][jj][kk];
       }
-
-      result = in_position(temp_transition_pos, temp_action, time);
-      if (result == NO_ERROR)
-      {
-        temp_action.set_active();
-        // temp_action.shoulders_active(false);
-        act(&temp_action);
-        last_action_millis = millis();         // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-        time_last_action = time;               // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-        offset_time_last_action = offset_time; // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-        delay(time + offset_time);
-      }
-      else
-      {
-        return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
-      }
-
-      result = in_position(*parking_position, temp_action, time);
-      if (result == NO_ERROR)
-      {
-        temp_action.set_active();
-        act(&temp_action);
-        last_action_millis = millis();         // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-        time_last_action = time;               // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-        offset_time_last_action = offset_time; // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-        delay(time + offset_time);
-      }
-      else
-      {
-        return PARKING_POSITION_IMPOSSIBLE;
-      }
-      current_position = -1;
-      rec.flushSerialPort(); // Data is received from the receiver during the delays in this function, so we need to flush this unwanted data in order to receive the real-time data.
-      return NO_ERROR;
     }
-    else
+    int forward_or_backward = 1;
+    int previous_position = current_position;
+    current_position = START_PARKING_SEQUENCE - 1;
+    while (current_position != END_PARKING_SEQUENCE)
     {
-      return PARKING_POSITION_NOT_UPDATED;
+      ErrorCode result = execute_sequence(forward_or_backward, START_PARKING_SEQUENCE, LENGTH_PARKING_SEQUENCE, time, offset_time);
+      // In some cases, the robot cannot go from an intermediate position to parking (some steps of the turning sequences for instance).
+      // In this case, we stop the parking routine, and go back to previous state.
+      if (result != NO_ERROR && result != WAITING)
+      {
+        current_position = previous_position;
+        break;
+      }
     }
+    rec.flushSerialPort();
   }
 }
 
 ErrorCode Droideka::unpark(int time = 500, int offset_time = 500)
 {
-  if (current_position != -1)
+  if (current_position != END_PARKING_SEQUENCE)
   {
     return ROBOT_ALREADY_UNPARKED;
   }
   else
   {
-    Action unparking;
-    ErrorCode result;
-    result = in_position(*parking_transition_position, unparking, time);
-    if (result == NO_ERROR)
+    while (current_position != END_UNPARKING_SEQUENCE)
     {
-      unparking.set_active();
-      act(&unparking);
-      last_action_millis = millis();         // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-      time_last_action = time;               // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-      offset_time_last_action = offset_time; // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-      delay(time + offset_time);
+      ErrorCode result = execute_sequence(1, START_UNPARKING_SEQUENCE, LENGTH_UNPARKING_SEQUENCE, time, offset_time);
+      if (result != NO_ERROR && result != WAITING)
+      {
+        break;
+      }
     }
-    else
-    {
-      unparking.set_active(false);
-      return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
-    }
-
-    result = in_position(*starting_position_walking, unparking, time);
-    if (result == NO_ERROR)
-    {
-      unparking.set_active();
-      act(&unparking);
-      last_action_millis = millis();         // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-      time_last_action = time;               // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-      offset_time_last_action = offset_time; // Not sure if this is necessary due to the delay below, but I do it anyway, just to be safe
-      delay(time + offset_time);
-    }
-    else
-    {
-      unparking.set_active(false);
-      return STARTING_WALKING_POSITION_IMPOSSIBLE;
-    }
-
-    current_position = nb_walking_sequence - 1;
-    rec.flushSerialPort(); // Data is received from the receiver during the delays in this function, so we need to flush this unwanted data in order to receive the real-time data.
-    return NO_ERROR;
+    rec.flushSerialPort();
   }
 }
 
 ErrorCode Droideka::walk(int time = 500, int offset_time = 500)
 {
-  if (current_position == -1)
+  if (current_position == END_PARKING_SEQUENCE)
   {
-    return ROBOT_PARKED_WHEN_ASKED_TO_WALK;
+    return ROBOT_PARKED_WHEN_ASKED_TO_MOVE;
   }
   else
   {
-    int temp_current_pos;
+    if (current_position == END_UNPARKING_SEQUENCE)
+    {
+      current_position = END_WALKING_SEQUENCE;
+    }
     int forward_or_backward = 0;
     if (forward())
     {
@@ -474,169 +414,80 @@ ErrorCode Droideka::walk(int time = 500, int offset_time = 500)
       forward_or_backward = -1;
     }
 
-    Action walking;
-    Droideka_Position next_pos = *starting_position_walking;
-    ErrorCode result;
-    double current_action_millis;
-
-    temp_current_pos = max(current_position + forward_or_backward, current_position + forward_or_backward + nb_walking_sequence);
-    temp_current_pos = temp_current_pos % nb_walking_sequence;
-    for (int jj = 0; jj < LEG_NB; jj++)
-    {
-      for (int kk = 0; kk < 3; kk++)
-      {
-        next_pos.legs[jj][kk] = walking_sequence[temp_current_pos][jj][kk];
-      }
-    }
-    result = in_position(next_pos, walking, time);
-    if (result == NO_ERROR)
-    {
-      walking.set_active();
-
-      current_action_millis = millis();
-      if (current_action_millis - last_action_millis > time_last_action + offset_time_last_action)
-      {
-        act(&walking);
-        last_action_millis = current_action_millis;
-        time_last_action = time;
-        offset_time_last_action = offset_time;
-      }
-      else
-      {
-        return WAITING;
-      }
-    }
-    else
-    {
-      walking.set_active(false);
-      return result;
-    }
-
-    current_position = temp_current_pos;
-    return NO_ERROR;
+    execute_sequence(forward_or_backward, START_WALKING_SEQUENCE, LENGTH_WALKING_SEQUENCE, time, offset_time);
   }
 }
 
-ErrorCode Droideka::slide(int time = 500, int offset_time = 500)
+ErrorCode Droideka::turn_left(int time = 500, int offset_time = 500)
 {
-  if (current_position == -1)
+  if (current_position == END_PARKING_SEQUENCE)
   {
-    return ROBOT_NOT_IN_POSITION_TO_SLIDE;
+    return ROBOT_PARKED_WHEN_ASKED_TO_MOVE;
   }
   else
   {
-    int temp_current_pos;
+    if (current_position == END_UNPARKING_SEQUENCE)
+    {
+      current_position = END_TURN_LEFT_SEQUENCE;
+    }
     int forward_or_backward = 0;
-    if (forward()) // TODO change to joystick sideways
+    if (leftward()) // TODO change to joystick sideways
     {
       forward_or_backward = 1;
     }
-    else if (backward()) // TODO change to joystick sideways
+    else if (rightward()) // TODO change to joystick sideways
     {
       forward_or_backward = -1;
     }
-
-    Action walking;
-    Droideka_Position next_pos = *starting_position_walking;
-    ErrorCode result;
-    double current_action_millis;
-
-    temp_current_pos = max(current_position + forward_or_backward, current_position + forward_or_backward + nb_sliding_sequence);
-    temp_current_pos = temp_current_pos % nb_sliding_sequence;
-    for (int jj = 0; jj < LEG_NB; jj++)
+    if (forward_or_backward != 0)
     {
-      for (int kk = 0; kk < 3; kk++)
-      {
-        next_pos.legs[jj][kk] = sliding_sequence[temp_current_pos][jj][kk];
-      }
+      execute_sequence(forward_or_backward, START_TURN_LEFT_SEQUENCE, LENGTH_TURN_LEFT_SEQUENCE, time, offset_time);
     }
-    result = in_position(next_pos, walking, time);
-    if (result == NO_ERROR)
-    {
-      walking.set_active();
-
-      current_action_millis = millis();
-      if (current_action_millis - last_action_millis > time_last_action + offset_time_last_action)
-      {
-        act(&walking);
-        last_action_millis = current_action_millis;
-        time_last_action = time;
-        offset_time_last_action = offset_time;
-      }
-      else
-      {
-        return WAITING;
-      }
-    }
-    else
-    {
-      walking.set_active(false);
-      return result;
-    }
-
-    current_position = temp_current_pos;
-    return NO_ERROR;
   }
 }
 
-ErrorCode Droideka::twist(int time = 500, int offset_time = 500)
+ErrorCode Droideka::execute_sequence(int f_or_b, int start_sequence, int length_sequence, int time, int offset_time)
 {
-  if (current_position == -1)
+  int temp_current_pos;
+
+  Action walking;
+  Droideka_Position next_pos(sequences[START_UNPARKING_SEQUENCE + LENGTH_UNPARKING_SEQUENCE - 1]);
+  ErrorCode result;
+  double current_action_millis;
+
+  temp_current_pos = max(current_position - start_sequence + f_or_b, current_position - start_sequence + f_or_b + length_sequence);
+  temp_current_pos = temp_current_pos % length_sequence + start_sequence;
+  for (int jj = 0; jj < LEG_NB; jj++)
   {
-    return ROBOT_NOT_IN_POSITION_TO_SLIDE;
+    for (int kk = 0; kk < 3; kk++)
+    {
+      next_pos.legs[jj][kk] = sequences[temp_current_pos][jj][kk];
+    }
   }
-  else
+  result = in_position(next_pos, walking, time);
+  if (result == NO_ERROR)
   {
-    int temp_current_pos;
-    int forward_or_backward = 0;
-    if (forward()) // TODO change to joystick sideways
-    {
-      forward_or_backward = 1;
-    }
-    else if (backward()) // TODO change to joystick sideways
-    {
-      forward_or_backward = -1;
-    }
+    walking.set_active();
 
-    Action walking;
-    Droideka_Position next_pos = *starting_position_walking;
-    ErrorCode result;
-    double current_action_millis;
-
-    temp_current_pos = max(current_position + forward_or_backward, current_position + forward_or_backward + nb_twisting_sequence);
-    temp_current_pos = temp_current_pos % nb_twisting_sequence;
-    for (int jj = 0; jj < LEG_NB; jj++)
+    current_action_millis = millis();
+    if (current_action_millis - last_action_millis > time_last_action + offset_time_last_action)
     {
-      for (int kk = 0; kk < 3; kk++)
-      {
-        next_pos.legs[jj][kk] = twisting_sequence[temp_current_pos][jj][kk];
-      }
-    }
-    result = in_position(next_pos, walking, time);
-    if (result == NO_ERROR)
-    {
-      walking.set_active();
-
-      current_action_millis = millis();
-      if (current_action_millis - last_action_millis > time_last_action + offset_time_last_action)
-      {
-        act(&walking);
-        last_action_millis = current_action_millis;
-        time_last_action = time;
-        offset_time_last_action = offset_time;
-      }
-      else
-      {
-        return WAITING;
-      }
+      act(&walking);
+      last_action_millis = current_action_millis;
+      time_last_action = time;
+      offset_time_last_action = offset_time;
     }
     else
     {
-      walking.set_active(false);
-      return result;
+      return WAITING;
     }
-
-    current_position = temp_current_pos;
-    return NO_ERROR;
   }
+  else
+  {
+    walking.set_active(false);
+    return result;
+  }
+
+  current_position = temp_current_pos;
+  return NO_ERROR;
 }
