@@ -4,6 +4,7 @@
 #define LEG_NB 4
 #define TIBIA_LENGTH 7
 #define HIP_LENGTH 7
+
 #define SERVO_BUS_WRITE_PIN_FRONT 13
 #define SERVO_BUS_WRITE_PIN_BACK 13
 
@@ -31,6 +32,7 @@
 #define ANG_2_3 (ANG_2 + ANG_3) / 2
 #define X_1 5.29
 #define X_2 4.0
+
 #define X_3 8.0
 #define Y_TOUCHING -11.0
 #define Y_NOT_TOUCHING -6.0
