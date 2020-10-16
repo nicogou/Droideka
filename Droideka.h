@@ -115,10 +115,11 @@ public:
     int offset_time_last_action;   // Time between end of the previous action and the new one.
 
     ErrorCode execute_sequence(int f_or_b, int start_sequence, int length_sequence, int time, int offset_time); // Goes to the next step of the specified sequence.
-    ErrorCode park(int time = 500, int offset_time = 500);                                                      // Parking routine
-    ErrorCode unpark(int time = 500, int offset_time = 500);                                                    // Unparking routine
-    ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000);                               // Walking routine (time in seconds)
-    ErrorCode establish_cog_movement();                                                                         // Determines the movement of the center of gravity and the end position of the legs
+    ErrorCode move_into_position(Droideka_Position pos, int time = 0);
+    ErrorCode park(int time = 1000);                                              // Parking routine
+    ErrorCode unpark(int time = 1000);                                            // Unparking routine
+    ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
+    ErrorCode establish_cog_movement();                                           // Determines the movement of the center of gravity and the end position of the legs
     Droideka_Position get_current_position();
     Droideka_Position get_future_position(Droideka_Position start_pos, unsigned long time_elapsed, int one_leg = -1);
     Droideka_Position get_final_position(Droideka_Position start_pos);

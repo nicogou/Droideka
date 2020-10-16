@@ -284,11 +284,11 @@ ErrorCode Droideka::change_mode()
 {
   if (get_mode() == WALKING)
   {
-    park(1000, 0);
+    park();
   }
   else if (get_mode() == ROLLING)
   {
-    unpark(1000, 0);
+    unpark();
   }
 }
 
@@ -340,12 +340,41 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
   }
 }
 
-ErrorCode Droideka::park(int time = 500, int offset_time = 500)
+ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 {
+  Action action;
+  ErrorCode result = in_position(pos, action, time);
+  if (result == NO_ERROR)
+  {
+    action.set_active();
+    act(&action);
+  }
+
+  return result;
 }
 
-ErrorCode Droideka::unpark(int time = 500, int offset_time = 500)
+ErrorCode Droideka::park(int time = 1000)
 {
+  Droideka_Position current_position(get_current_position().legs);
+  for (int ii = 0; ii < LEG_NB; ii++)
+  {
+    current_position.legs[ii][2] = Y_PARKING;
+  }
+
+  ErrorCode result = move_into_position(current_position);
+
+  result = move_into_position(parked);
+  return result;
+}
+
+ErrorCode Droideka::unpark(int time = 1000)
+{
+  Droideka_Position unparking(unparking);
+  ErrorCode result = move_into_position(unparking);
+
+  Droideka_Position unparked(unparked);
+  result = move_into_position(unparked);
+  return result;
 }
 
 ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 8000000)
@@ -363,7 +392,6 @@ ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 80
   // Step 2 : déterminer le déplacement de chaque patte et effectuer le déplacement.
   if (walk_compute_state == 1)
   {
-    Action walking;
     float temp[LEG_NB][3];
     unsigned long time_elapsed = (micros() - start_walk_time) * TIME_SAMPLE / (time);
     if (time_elapsed > TIME_SAMPLE)
@@ -408,18 +436,10 @@ ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 80
         }
       }
     }
-    ErrorCode result = in_position(temp, walking, 0);
-    if (result == NO_ERROR)
-    {
-      walking.set_active();
-      act(&walking);
-    }
-    else
-    {
-      return result;
-    }
+
+    ErrorCode result = move_into_position(temp);
   }
-  return NO_ERROR;
+  return result;
 }
 
 ErrorCode Droideka::establish_cog_movement()
