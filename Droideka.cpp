@@ -264,7 +264,13 @@ ErrorCode Droideka::move(int throttle)
 
 DroidekaMode Droideka::get_mode()
 {
-  if (false)
+  Droideka_Position current_position(get_current_position().legs);
+  bool test = 1;
+  for (int ii = 0; ii < LEG_NB; ii++)
+  {
+    test = test * (current_position.legs[ii][2] >= Y_NOT_TOUCHING);
+  }
+  if (test)
   {
     return ROLLING;
   }
