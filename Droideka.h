@@ -4,6 +4,7 @@
 #include <Receiver.h>
 #include <ServoBus.h>
 #include <utils/utils.h>
+#include <math.h>
 
 class Droideka
 {
@@ -38,6 +39,21 @@ private:
     int shoulder_angle_encoder[LEG_NB] = {0, 0, 0, 0};
     int knee_angle_encoder[LEG_NB] = {0, 0, 0, 0}; //phi 1
     int hip_angle_encoder[LEG_NB] = {0, 0, 0, 0};  //phi 2
+
+    float t[TIME_SAMPLE];
+    float tx[TIME_SAMPLE];
+    float ty[TIME_SAMPLE];
+    float alpha[TIME_SAMPLE];
+    float shoulder_pos[LEG_NB][2] = {
+        {-BODY_WIDTH / 2, BODY_LENGTH / 2},
+        {BODY_WIDTH / 2, BODY_LENGTH / 2},
+        {-BODY_WIDTH / 2, -BODY_LENGTH / 2},
+        {BODY_WIDTH / 2, -BODY_LENGTH / 2}};
+    float shoulder_mult[LEG_NB][2] = {
+        {-1, 1},
+        {1, 1},
+        {-1, -1},
+        {1, -1}};
 
     // Motor ids for the Droideka legs
     unsigned int motor_ids[MOTOR_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -98,172 +114,23 @@ public:
     int time_last_action;          // Time the previous action needs to be undertaken in
     int offset_time_last_action;   // Time between end of the previous action and the new one.
 
-    int current_position = END_PARKING_SEQUENCE;                                                                // We assume the robot is parked on startup. This holds the current position of the legs of the robot.
     ErrorCode execute_sequence(int f_or_b, int start_sequence, int length_sequence, int time, int offset_time); // Goes to the next step of the specified sequence.
     ErrorCode park(int time = 500, int offset_time = 500);                                                      // Parking routine
     ErrorCode unpark(int time = 500, int offset_time = 500);                                                    // Unparking routine
-    ErrorCode walk(int time = 500, int offset_time = 500);                                                      // Walking routine
-    ErrorCode turn_left(int time = 500, int offset_time = 500);                                                 /* Turning routine. It is called _left because the first movement is the robot twisting on its legs on the left.
-                                                                                                                *  Computations were made to do the twisting on the right too, but the tip of the robots's legs would be further away than with the left twisting
-                                                                                                                *  Further tip of the leg is believed to require more torque on the motors, so the left sequence is preferred.
-                                                                                                                *  In order to turn right, we just follow the turning left sequence in reverse.
-                                                                                                                */
-
-    // The following huge array holds the various sequences needed by the robot to park, unpark, walk, etc.
-    // For the walking and turning sequences, it is assumed the position of the robot is the last position of the unparking sequence.
-    // IDEA : add sequences like: waving to say hello, doing pushups, etc...
-    float sequences[LENGTH_MAINTENANCE_SEQUENCE + LENGTH_UNPARKING_SEQUENCE + LENGTH_PARKING_SEQUENCE + LENGTH_WALKING_SEQUENCE + LENGTH_TURN_LEFT_SEQUENCE][LEG_NB][3] = {
-        /************ Start of Maintenance sequence ************/
-        {{ANG_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
-         {ANG_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
-         {ANG_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
-         {ANG_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE}},
-        /************ End of Maintenance sequence ************/
-
-        /************ Start of Unparking sequence ************/
-        {{ANG_1, X_1, Y_NOT_TOUCHING},
-         {ANG_2, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_NOT_TOUCHING},
-         {ANG_2, X_2, Y_NOT_TOUCHING}},
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING}},
-        /************ End of Unparking sequence ************/
-
-        /************ Start of Parking sequence ************/
-        {{ANG_1, X_1, Y_NOT_TOUCHING},
-         {ANG_2, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_NOT_TOUCHING},
-         {ANG_2, X_2, Y_NOT_TOUCHING}},
-        {{ANG_PARKING, X_PARKING, Y_PARKING},
-         {ANG_PARKING, X_PARKING, Y_PARKING},
-         {ANG_PARKING, X_PARKING, Y_PARKING},
-         {ANG_PARKING, X_PARKING, Y_PARKING}},
-        /************ End of Parking sequence ************/
-
-        /************ Start of Walking sequence ************/
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_2_3, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING}},
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_3, X_3, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING}},
-
-        {{ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_3, X_3, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-
-        {{ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2_3, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-        {{ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-
-        {{ANG_2_3, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-        {{ANG_3, X_3, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_3, X_3, Y_TOUCHING}},
-
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2_3, X_2, Y_NOT_TOUCHING}},
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING}},
-        /************ End of Walking sequence ************/
-
-        /************ Start of Turning sequence ************/
-        {{ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING},
-         {ANG_TWIST_LEFT_FR, X_TWIST_LEFT_FR, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RR, X_TWIST_LEFT_RR, Y_TOUCHING}},
-        {{ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING},
-         {ANG_TWIST_LEFT_FR, X_TWIST_LEFT_FR, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-
-        {{ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING},
-         {(ANG_TWIST_LEFT_FR + ANG_1) / 2, X_1, Y_NOT_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-        {{ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-
-        {{(ANG_TWIST_LEFT_FL + ANG_2) / 2, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-        {{ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-
-        {{ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {(ANG_TWIST_LEFT_RL + ANG_2) / 2, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-        {{ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING}},
-
-        {{ANG_TWIST_LEFT_RR, X_TWIST_LEFT_RR, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_TWIST_LEFT_FR, X_TWIST_LEFT_FR, Y_TOUCHING},
-         {ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING}},
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_TWIST_LEFT_FR, X_TWIST_LEFT_FR, Y_TOUCHING},
-         {ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING}},
-
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {(ANG_TWIST_LEFT_FR + ANG_1) / 2, X_1, Y_NOT_TOUCHING},
-         {ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING}},
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_FL, X_TWIST_LEFT_FL, Y_TOUCHING}},
-
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {(ANG_TWIST_LEFT_FL + ANG_2) / 2, X_2, Y_NOT_TOUCHING}},
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_TWIST_LEFT_RL, X_TWIST_LEFT_RL, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING}},
-
-        {{ANG_1, X_1, Y_TOUCHING},
-         {(ANG_TWIST_LEFT_RL + ANG_2) / 2, X_2, Y_NOT_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING}},
-        {{ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING},
-         {ANG_1, X_1, Y_TOUCHING},
-         {ANG_2, X_2, Y_TOUCHING}},
-        /************ Enf of Turning sequence ************/
-    };
+    ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000);                               // Walking routine (time in seconds)
+    ErrorCode establish_cog_movement();                                                                         // Determines the movement of the center of gravity and the end position of the legs
+    Droideka_Position get_current_position();
+    Droideka_Position get_future_position(Droideka_Position start_pos, unsigned long time_elapsed, int one_leg = -1);
+    Droideka_Position get_final_position(Droideka_Position start_pos);
+    int walk_compute_state = 0;
+    unsigned long start_walk_time = 0;
+    int leg_order[LEG_NB];
+    bool leg_lifted[LEG_NB];
+    int moving_leg_nb = 0;
+    unsigned long delta_time;
+    Droideka_Position get_lifted_position(int leg, Droideka_Position start_pos, Droideka_Position end_pos, unsigned long time_);
+    Droideka_Position current_position;
+    Droideka_Position final_pos;
 
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
     // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).
