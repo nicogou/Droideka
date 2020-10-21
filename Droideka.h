@@ -135,6 +135,8 @@ public:
     Droideka_Position get_lifted_position(int leg, Droideka_Position start_pos, Droideka_Position end_pos, unsigned long time_);
     Droideka_Position current_position;
     Droideka_Position final_pos;
+    ErrorCode establish_legs_movement();
+    Droideka_Position movement[TIME_SAMPLE];
 
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
     // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).
