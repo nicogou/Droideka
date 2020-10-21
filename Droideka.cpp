@@ -379,14 +379,17 @@ ErrorCode Droideka::unpark(int time = 1000)
 
 ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 8000000)
 {
+  ErrorCode result;
+
   // Step 1 : determiner tx(t), ty(t) et alpha(t) correspondant au centre de gravité du robot, l'ordre de déplacement des pattes, et la position d'arrivée des pattes.
   if (walk_compute_state == 0)
   {
     establish_cog_movement();
-    current_position = get_current_position();
-    final_pos = get_final_position(current_position);
+    current_position = get_current_position();        // Gets position of each motor at the start of the movement
+    final_pos = get_final_position(current_position); // Calculates position of the legs if the CoG moves the expected amount (but the legs themselves don't move).
     start_walk_time = micros();
     walk_compute_state++;
+    result = NO_ERROR;
   }
 
   // Step 2 : déterminer le déplacement de chaque patte et effectuer le déplacement.
@@ -396,48 +399,41 @@ ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 80
     unsigned long time_elapsed = (micros() - start_walk_time) * TIME_SAMPLE / (time);
     if (time_elapsed > TIME_SAMPLE)
     {
-      for (int jj = 0; jj < LEG_NB; jj++)
+      // If the time measured is bigger than the needed time to make a step, the step is finished so walk_compute_state goes back to 1.
+      // Furthermore, we cap time_elapsed to TIME_SAMPLE for calculation purposes.
+      time_elapsed = TIME_SAMPLE;
+      walk_compute_state--;
+    }
+
+    Droideka_Position temp_current_pos(get_future_position(current_position, tx, ty, alpha, time_elapsed).legs);
+    Droideka_Position temp_future_pos(get_future_position(final_pos, tx, ty, alpha, time_elapsed).legs); //
+
+    for (int jj = 0; jj < LEG_NB; jj++)
+    {
+      if (time_elapsed <= (leg_order[jj] - 1) * TIME_SAMPLE / moving_leg_nb + delta_time)
       {
         for (int kk = 0; kk < 3; kk++)
         {
-          temp[jj][kk] = final_pos.legs[jj][kk];
+          temp[jj][kk] = temp_current_pos.legs[jj][kk];
         }
       }
-
-      walk_compute_state--;
-    }
-    else
-    {
-      Droideka_Position temp_current_pos(get_future_position(current_position, time_elapsed).legs);
-      Droideka_Position temp_future_pos(get_future_position(final_pos, time_elapsed).legs);
-
-      for (int jj = 0; jj < LEG_NB; jj++)
+      else if (time_elapsed > (leg_order[jj] - 1) * TIME_SAMPLE / moving_leg_nb + delta_time && time_elapsed <= (leg_order[jj]) * TIME_SAMPLE / moving_leg_nb)
       {
-        if (time_elapsed <= (leg_order[jj] - 1) * TIME_SAMPLE / moving_leg_nb + delta_time)
+        for (int kk = 0; kk < 3; kk++)
         {
-          for (int kk = 0; kk < 3; kk++)
-          {
-            temp[jj][kk] = temp_current_pos.legs[jj][kk];
-          }
+          temp[jj][kk] = get_lifted_position(jj, current_position, final_pos, time_elapsed).legs[jj][kk];
         }
-        else if (time_elapsed > (leg_order[jj] - 1) * TIME_SAMPLE / moving_leg_nb + delta_time && time_elapsed <= (leg_order[jj]) * TIME_SAMPLE / moving_leg_nb)
+      }
+      else if (time_elapsed > (leg_order[jj]) * TIME_SAMPLE / moving_leg_nb && time_elapsed <= TIME_SAMPLE)
+      {
+        for (int kk = 0; kk < 3; kk++)
         {
-          for (int kk = 0; kk < 3; kk++)
-          {
-            temp[jj][kk] = get_lifted_position(jj, current_position, final_pos, time_elapsed).legs[jj][kk];
-          }
-        }
-        else if (time_elapsed > (leg_order[jj]) * TIME_SAMPLE / moving_leg_nb && time_elapsed <= TIME_SAMPLE)
-        {
-          for (int kk = 0; kk < 3; kk++)
-          {
-            temp[jj][kk] = temp_future_pos.legs[jj][kk];
-          }
+          temp[jj][kk] = temp_future_pos.legs[jj][kk];
         }
       }
     }
 
-    ErrorCode result = move_into_position(temp);
+    result = move_into_position(temp);
   }
   return result;
 }
@@ -463,6 +459,13 @@ ErrorCode Droideka::establish_cog_movement()
     }
     moving_leg_nb = 4;
     delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
+  }
+
+  for (int ii = 0; ii < TIME_SAMPLE; ii++)
+  {
+    reverse_tx[ii] = tx[ii] * -1;
+    reverse_ty[ii] = ty[ii] * -1;
+    reverse_alpha[ii] = alpha[ii] * -1;
   }
 
   return NO_ERROR;
@@ -494,17 +497,15 @@ Droideka_Position Droideka::get_current_position()
   return result;
 }
 
-Droideka_Position Droideka::get_future_position(Droideka_Position start_pos, unsigned long time_elapsed, int one_leg = -1)
+Droideka_Position Droideka::get_future_position(Droideka_Position start_pos, float trans_x[TIME_SAMPLE], float trans_y[TIME_SAMPLE], float angle[TIME_SAMPLE], unsigned long time_elapsed, int one_leg = -1)
 {
-  Droideka_Position initial_pos(get_current_position().legs);
-
   if (time_elapsed < 0 || time_elapsed > TIME_SAMPLE)
   {
-    return initial_pos;
+    return start_pos; // Not sure this is right if time_elapsed > TIME_SAMPLE.
   }
 
   float temp[LEG_NB][2];           // x and y final coordinates of each feet
-  float temp_final_pos[LEG_NB][3]; // used to build the Droideka_Position object by calculation rho, theta and z thanks to x and y stored in temp.
+  float temp_final_pos[LEG_NB][3]; // used to build the Droideka_Position object by calculating rho, theta and z thanks to x and y stored in temp.
 
   for (int ii = 0; ii < LEG_NB; ii++)
   {
@@ -513,21 +514,21 @@ Droideka_Position Droideka::get_future_position(Droideka_Position start_pos, uns
       ii = one_leg;
     }
 
-    temp[ii][0] = shoulder_pos[ii][0] * (cos(alpha[time_elapsed]) - 1) + shoulder_pos[ii][1] * sin(alpha[time_elapsed]) + shoulder_mult[ii][0] * sqrt((initial_pos.legs[ii][1] * cos(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * tx[time_elapsed]) * (initial_pos.legs[ii][1] * cos(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * tx[time_elapsed]) + (initial_pos.legs[ii][1] * sin(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * ty[time_elapsed]) * (initial_pos.legs[ii][1] * sin(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * ty[time_elapsed])) * cos(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((initial_pos.legs[ii][1] * cos(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * tx[time_elapsed]) / (initial_pos.legs[ii][1] * sin(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * ty[time_elapsed])) - alpha[time_elapsed]);
-    temp[ii][1] = shoulder_pos[ii][1] * (cos(alpha[time_elapsed]) - 1) + shoulder_pos[ii][0] * sin(alpha[time_elapsed]) + shoulder_mult[ii][0] * sqrt((initial_pos.legs[ii][1] * cos(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * tx[time_elapsed]) * (initial_pos.legs[ii][1] * cos(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * tx[time_elapsed]) + (initial_pos.legs[ii][1] * sin(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * ty[time_elapsed]) * (initial_pos.legs[ii][1] * sin(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * ty[time_elapsed])) * sin(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((initial_pos.legs[ii][1] * cos(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * tx[time_elapsed]) / (initial_pos.legs[ii][1] * sin(3.141592 * initial_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * ty[time_elapsed])) - alpha[time_elapsed]);
-    temp_final_pos[ii][2] = initial_pos.legs[ii][3];
+    temp[ii][0] = shoulder_pos[ii][0] * (cos(angle[time_elapsed]) - 1) + shoulder_pos[ii][1] * sin(angle[time_elapsed]) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * cos(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - angle[time_elapsed]);
+    temp[ii][1] = shoulder_pos[ii][1] * (cos(angle[time_elapsed]) - 1) + shoulder_pos[ii][0] * sin(angle[time_elapsed]) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * sin(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - angle[time_elapsed]);
+    temp_final_pos[ii][2] = start_pos.legs[ii][2];
     temp_final_pos[ii][1] = sqrt(temp[ii][0] * temp[ii][0] + temp[ii][1] * temp[ii][1]);
-    if (temp_final_pos[ii][1] == 0)
+    if (temp_final_pos[ii][1] == 0) // Si x et y sont nuls
     {
       temp_final_pos[ii][0] = 0; // TODO : réfléchir à cette valeur. Est-il possible de déterminer theta si x et y sont nuls?
     }
     else if (temp[ii][0] == 0) // Si rho est non nul, alors si x est nul, y est non nul et on peut diviser par y.
     {
-      temp_final_pos[ii][0] = temp[ii][1] / abs(temp[ii][1]) * 90;
+      temp_final_pos[ii][0] = temp[ii][1] / abs(temp[ii][1]) * 90; // Si x est nul, rho vaut + ou - 90°, determiné par le signe de y.
     }
     else
     {
-      temp_final_pos[ii][0] = atan(temp[ii][1] / temp[ii][0]);
+      temp_final_pos[ii][0] = atan(temp[ii][1] / temp[ii][0]); // Dans le cas général, tan(theta) = y/x.
     }
 
     if (one_leg != -1)
@@ -541,7 +542,7 @@ Droideka_Position Droideka::get_future_position(Droideka_Position start_pos, uns
 
 Droideka_Position Droideka::get_final_position(Droideka_Position start_pos)
 {
-  return get_future_position(start_pos, TIME_SAMPLE);
+  return get_future_position(start_pos, tx, ty, alpha, TIME_SAMPLE);
 }
 
 Droideka_Position Droideka::get_lifted_position(int leg, Droideka_Position start_pos, Droideka_Position end_pos, unsigned long time_)
@@ -552,8 +553,11 @@ Droideka_Position Droideka::get_lifted_position(int leg, Droideka_Position start
   unsigned long interval_time = fin_time - debut_time;
   unsigned long time_from_lifting = time_ - debut_time;
 
-  Droideka_Position debut_pos(get_future_position(start_pos, debut_time, leg).legs);
-  Droideka_Position fin_pos(get_future_position(end_pos, fin_time, leg).legs);
+  Droideka_Position debut_pos(get_future_position(start_pos, tx, ty, alpha, debut_time, leg).legs);
+  Droideka_Position fin_pos(get_future_position(end_pos, reverse_tx, reverse_ty, reverse_alpha, fin_time, leg).legs);
+
+  // Between the lifting of the leg and the Theta and X are linear
+
   float temp[LEG_NB][3];
   for (int ii = 0; ii < 2; ii++)
   {

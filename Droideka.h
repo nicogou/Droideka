@@ -44,6 +44,9 @@ private:
     float tx[TIME_SAMPLE];
     float ty[TIME_SAMPLE];
     float alpha[TIME_SAMPLE];
+    float reverse_tx[TIME_SAMPLE];
+    float reverse_ty[TIME_SAMPLE];
+    float reverse_alpha[TIME_SAMPLE];
     float shoulder_pos[LEG_NB][2] = {
         {-BODY_WIDTH / 2, BODY_LENGTH / 2},
         {BODY_WIDTH / 2, BODY_LENGTH / 2},
@@ -121,7 +124,7 @@ public:
     ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
     ErrorCode establish_cog_movement();                                           // Determines the movement of the center of gravity and the end position of the legs
     Droideka_Position get_current_position();
-    Droideka_Position get_future_position(Droideka_Position start_pos, unsigned long time_elapsed, int one_leg = -1);
+    Droideka_Position get_future_position(Droideka_Position start_pos, float trans_x[TIME_SAMPLE], float trans_y[TIME_SAMPLE], float angle[TIME_SAMPLE], unsigned long time_elapsed, int one_leg = -1);
     Droideka_Position get_final_position(Droideka_Position start_pos);
     int walk_compute_state = 0;
     unsigned long start_walk_time = 0;
