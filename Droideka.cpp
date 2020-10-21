@@ -436,9 +436,9 @@ ErrorCode Droideka::establish_cog_movement()
 
   for (int ii = 0; ii < TIME_SAMPLE; ii++)
   {
-    reverse_tx[ii] = tx[ii] * -1;
-    reverse_ty[ii] = ty[ii] * -1;
-    reverse_alpha[ii] = alpha[ii] * -1;
+    reverse_tx[ii] = tx[TIME_SAMPLE - ii] * -1;
+    reverse_ty[ii] = ty[TIME_SAMPLE - ii] * -1;
+    reverse_alpha[ii] = alpha[TIME_SAMPLE - ii] * -1;
   }
 
   return NO_ERROR;
