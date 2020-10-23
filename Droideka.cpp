@@ -6,11 +6,6 @@ Droideka::Droideka(Stream *debugBoardStream_front, Stream *debugBoardStream_back
   servoBus_back = new ServoBus(debugBoardStream_back, servo_bus_write_pin_back);
   servoBus_front->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
   servoBus_back->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
-
-  for (int ii = 0; ii < TIME_SAMPLE; ii++)
-  {
-    t[ii] = ii;
-  }
 }
 
 void Droideka::initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state)
@@ -355,25 +350,25 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 
 ErrorCode Droideka::park(int time = 1000)
 {
-  Droideka_Position current_position(get_current_position().legs);
+  current_position = get_current_position();
   for (int ii = 0; ii < LEG_NB; ii++)
   {
     current_position.legs[ii][2] = Y_PARKING;
   }
 
-  ErrorCode result = move_into_position(current_position);
+  ErrorCode result = move_into_position(current_position, time);
 
-  result = move_into_position(parked);
+  result = move_into_position(parked, time);
   return result;
 }
 
 ErrorCode Droideka::unpark(int time = 1000)
 {
   Droideka_Position unparking(unparking);
-  ErrorCode result = move_into_position(unparking);
+  ErrorCode result = move_into_position(unparking, time);
 
   Droideka_Position unparked(unparked);
-  result = move_into_position(unparked);
+  result = move_into_position(unparked, time);
   return result;
 }
 
@@ -381,23 +376,27 @@ ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 80
 {
   ErrorCode result;
 
-  // Step 1 : determiner tx(t), ty(t) et alpha(t) correspondant au centre de gravité du robot, l'ordre de déplacement des pattes, et prévoir le déplacement de chaque patte.
+  // Step 1 : Compute the leg moves over the whole movement.
   if (walk_compute_state == 0)
   {
-    establish_cog_movement();
-    current_position = get_current_position();        // Gets position of each motor at the start of the movement
-    final_pos = get_final_position(current_position); // Calculates position of the legs if the CoG moves the expected amount (but the legs themselves don't move).
-    establish_legs_movement();
-    walk_compute_state = 1;
-    result = NO_ERROR;
-    start_walk_time = micros();
+    current_position = get_current_position();                     // Gets position of each motor at the start of the movement
+    movement = Movement(current_position, throttle_x, throttle_y); // Computes the movement of the CoG and the movement of the legs.
+    if (movement.valid_movement)
+    {
+      walk_compute_state = 1;
+      result = NO_ERROR;
+    }
+    else
+    {
+      result = INVALID_MOVEMENT;
+    }
   }
 
-  // Step 2 : déterminer le déplacement de chaque patte et effectuer le déplacement.
+  // Step 2 : move legs with the right timing.
   if (walk_compute_state == 1)
   {
     //float temp[LEG_NB][3];
-    unsigned long time_elapsed = (micros() - start_walk_time) * TIME_SAMPLE / (time);
+    unsigned long time_elapsed = (micros() - movement.start_walk_time) * TIME_SAMPLE / (time); // Watch out for overflow of micros!!!
     if (time_elapsed > TIME_SAMPLE)
     {
       // If the time measured is bigger than the needed time to make a step, the step is finished so walk_compute_state goes back to 1.
@@ -406,42 +405,9 @@ ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 80
       walk_compute_state = 0;
     }
 
-    result = move_into_position(movement[time_elapsed]);
+    result = move_into_position(movement.positions[time_elapsed]);
   }
   return result;
-}
-
-ErrorCode Droideka::establish_cog_movement()
-{
-  if (forward())
-  {
-    for (int ii = 0; ii < TIME_SAMPLE; ii++)
-    {
-      tx[ii] = MAX_LONGITUDINAL_COG_MOVE * ii / TIME_SAMPLE;
-      ty[ii] = 0;
-      alpha[ii] = 0;
-    }
-    leg_order[3] = 1;
-    leg_order[1] = 2;
-    leg_order[2] = 3;
-    leg_order[0] = 4;
-
-    for (int ii = 0; ii < LEG_NB; ii++)
-    {
-      leg_lifted[ii] = false;
-    }
-    moving_leg_nb = 4;
-    delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
-  }
-
-  for (int ii = 0; ii < TIME_SAMPLE; ii++)
-  {
-    reverse_tx[ii] = tx[TIME_SAMPLE - ii] * -1;
-    reverse_ty[ii] = ty[TIME_SAMPLE - ii] * -1;
-    reverse_alpha[ii] = alpha[TIME_SAMPLE - ii] * -1;
-  }
-
-  return NO_ERROR;
 }
 
 Droideka_Position Droideka::get_current_position()
@@ -468,119 +434,4 @@ Droideka_Position Droideka::get_current_position()
   }
   Droideka_Position result(temp);
   return result;
-}
-
-Droideka_Position Droideka::get_future_position(Droideka_Position start_pos, float trans_x[TIME_SAMPLE], float trans_y[TIME_SAMPLE], float angle[TIME_SAMPLE], unsigned long time_elapsed, int one_leg = -1)
-{
-  if (time_elapsed < 0 || time_elapsed > TIME_SAMPLE)
-  {
-    return start_pos; // Not sure this is right if time_elapsed > TIME_SAMPLE.
-  }
-
-  float temp[LEG_NB][2];           // x and y final coordinates of each feet
-  float temp_final_pos[LEG_NB][3]; // used to build the Droideka_Position object by calculating rho, theta and z thanks to x and y stored in temp.
-
-  for (int ii = 0; ii < LEG_NB; ii++)
-  {
-    if (one_leg != -1)
-    {
-      ii = one_leg;
-    }
-
-    temp[ii][0] = shoulder_pos[ii][0] * (cos(angle[time_elapsed]) - 1) + shoulder_pos[ii][1] * sin(angle[time_elapsed]) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * cos(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - angle[time_elapsed]);
-    temp[ii][1] = shoulder_pos[ii][1] * (cos(angle[time_elapsed]) - 1) + shoulder_pos[ii][0] * sin(angle[time_elapsed]) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * sin(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - angle[time_elapsed]);
-    temp_final_pos[ii][2] = start_pos.legs[ii][2];
-    temp_final_pos[ii][1] = sqrt(temp[ii][0] * temp[ii][0] + temp[ii][1] * temp[ii][1]);
-    if (temp_final_pos[ii][1] == 0) // Si x et y sont nuls
-    {
-      temp_final_pos[ii][0] = 0; // TODO : réfléchir à cette valeur. Est-il possible de déterminer theta si x et y sont nuls?
-    }
-    else if (temp[ii][0] == 0) // Si rho est non nul, alors si x est nul, y est non nul et on peut diviser par y.
-    {
-      temp_final_pos[ii][0] = temp[ii][1] / abs(temp[ii][1]) * 90; // Si x est nul, rho vaut + ou - 90°, determiné par le signe de y.
-    }
-    else
-    {
-      temp_final_pos[ii][0] = atan(temp[ii][1] / temp[ii][0]); // Dans le cas général, tan(theta) = y/x.
-    }
-
-    if (one_leg != -1)
-    {
-      ii = LEG_NB;
-    }
-  }
-  Droideka_Position final_pos(temp_final_pos);
-  return final_pos;
-}
-
-Droideka_Position Droideka::get_final_position(Droideka_Position start_pos)
-{
-  return get_future_position(start_pos, tx, ty, alpha, TIME_SAMPLE);
-}
-
-Droideka_Position Droideka::get_lifted_position(int leg, Droideka_Position start_pos, Droideka_Position end_pos, unsigned long time_)
-{
-  unsigned long debut_time = (leg_order[leg] - 1) * TIME_SAMPLE / moving_leg_nb + delta_time;
-  unsigned long fin_time = leg_order[leg] * TIME_SAMPLE / moving_leg_nb;
-  unsigned long mid_time = (debut_time + fin_time) / 2; // Not used.
-  unsigned long interval_time = fin_time - debut_time;
-  unsigned long time_from_lifting = time_ - debut_time;
-
-  Droideka_Position debut_pos(get_future_position(start_pos, tx, ty, alpha, debut_time, leg).legs);
-  Droideka_Position fin_pos(get_future_position(end_pos, reverse_tx, reverse_ty, reverse_alpha, TIME_SAMPLE - fin_time, leg).legs);
-
-  // Between the lifting and putting back of the leg, theta and X are linear, wheras Y follows a quadratic curve (arbitrarily defined)
-
-  float temp[LEG_NB][3];
-  for (int ii = 0; ii < 2; ii++)
-  {
-    temp[leg][ii] = (fin_pos.legs[leg][ii] - debut_pos.legs[leg][ii]) / interval_time * time_from_lifting + debut_pos.legs[leg][ii];
-  }
-  temp[leg][2] = Y_NOT_TOUCHING - (Y_NOT_TOUCHING - Y_TOUCHING) * ((time_from_lifting - interval_time / 2) / (interval_time / 2)) * ((time_from_lifting - interval_time / 2) / (interval_time / 2));
-
-  Droideka_Position result(temp);
-  return result;
-}
-
-ErrorCode Droideka::establish_legs_movement()
-{
-  float temp[LEG_NB][3];
-  unsigned long time_leg_starts_lifting;
-  unsigned long time_leg_touches_ground_again;
-
-  for (int ii = 0; ii < TIME_SAMPLE; ii++)
-  {
-    Droideka_Position temp_current_pos = get_future_position(current_position, tx, ty, alpha, ii);                               // Calculates the position of the legs before the leg is lifted.
-    Droideka_Position temp_future_pos = get_future_position(final_pos, reverse_tx, reverse_ty, reverse_alpha, TIME_SAMPLE - ii); // Calculates the position of the legs after the leg has been lifted and put back on the ground.
-
-    for (int jj = 0; jj < LEG_NB; jj++)
-    {
-      time_leg_starts_lifting = (leg_order[jj] - 1) * TIME_SAMPLE / moving_leg_nb + delta_time;
-      time_leg_touches_ground_again = (leg_order[jj]) * TIME_SAMPLE / moving_leg_nb;
-
-      if (ii <= time_leg_starts_lifting)
-      {
-        for (int kk = 0; kk < 3; kk++)
-        {
-          temp[jj][kk] = temp_current_pos.legs[jj][kk];
-        }
-      }
-      else if (ii > time_leg_starts_lifting && ii <= time_leg_touches_ground_again)
-      {
-        for (int kk = 0; kk < 3; kk++)
-        {
-          temp[jj][kk] = get_lifted_position(jj, current_position, final_pos, ii).legs[jj][kk];
-        }
-      }
-      else if (ii > time_leg_touches_ground_again && ii <= TIME_SAMPLE)
-      {
-        for (int kk = 0; kk < 3; kk++)
-        {
-          temp[jj][kk] = temp_future_pos.legs[jj][kk];
-        }
-      }
-    }
-    movement[ii] = Droideka_Position(temp);
-  }
-  return NO_ERROR;
 }

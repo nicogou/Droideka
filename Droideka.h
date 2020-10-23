@@ -40,24 +40,6 @@ private:
     int knee_angle_encoder[LEG_NB] = {0, 0, 0, 0}; //phi 1
     int hip_angle_encoder[LEG_NB] = {0, 0, 0, 0};  //phi 2
 
-    float t[TIME_SAMPLE];
-    float tx[TIME_SAMPLE];
-    float ty[TIME_SAMPLE];
-    float alpha[TIME_SAMPLE];
-    float reverse_tx[TIME_SAMPLE];
-    float reverse_ty[TIME_SAMPLE];
-    float reverse_alpha[TIME_SAMPLE];
-    float shoulder_pos[LEG_NB][2] = {
-        {-BODY_WIDTH / 2, BODY_LENGTH / 2},
-        {BODY_WIDTH / 2, BODY_LENGTH / 2},
-        {-BODY_WIDTH / 2, -BODY_LENGTH / 2},
-        {BODY_WIDTH / 2, -BODY_LENGTH / 2}};
-    float shoulder_mult[LEG_NB][2] = {
-        {-1, 1},
-        {1, 1},
-        {-1, -1},
-        {1, -1}};
-
     // Motor ids for the Droideka legs
     unsigned int motor_ids[MOTOR_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
     // IDs 0, 1 and 2 represent the front left leg
@@ -117,26 +99,15 @@ public:
     int time_last_action;          // Time the previous action needs to be undertaken in
     int offset_time_last_action;   // Time between end of the previous action and the new one.
 
-    ErrorCode execute_sequence(int f_or_b, int start_sequence, int length_sequence, int time, int offset_time); // Goes to the next step of the specified sequence.
     ErrorCode move_into_position(Droideka_Position pos, int time = 0);
     ErrorCode park(int time = 1000);                                              // Parking routine
     ErrorCode unpark(int time = 1000);                                            // Unparking routine
     ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
     ErrorCode establish_cog_movement();                                           // Determines the movement of the center of gravity and the end position of the legs
     Droideka_Position get_current_position();
-    Droideka_Position get_future_position(Droideka_Position start_pos, float trans_x[TIME_SAMPLE], float trans_y[TIME_SAMPLE], float angle[TIME_SAMPLE], unsigned long time_elapsed, int one_leg = -1);
-    Droideka_Position get_final_position(Droideka_Position start_pos);
     int walk_compute_state = 0;
-    unsigned long start_walk_time = 0;
-    int leg_order[LEG_NB];
-    bool leg_lifted[LEG_NB];
-    int moving_leg_nb = 0;
-    unsigned long delta_time;
-    Droideka_Position get_lifted_position(int leg, Droideka_Position start_pos, Droideka_Position end_pos, unsigned long time_);
     Droideka_Position current_position;
-    Droideka_Position final_pos;
-    ErrorCode establish_legs_movement();
-    Droideka_Position movement[TIME_SAMPLE];
+    Movement movement;
 
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
     // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).
