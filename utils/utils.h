@@ -246,6 +246,44 @@ struct Movement
         return NO_ERROR;
     }
 
+    ErrorCode establish_cog_movement_advanced(int throttle_x, int throttle_y)
+    {
+        if (throttle_x > 0 && abs(throttle_x) > abs(throttle_y))
+        // Moving forward.
+        {
+            float move_x = throttle_x * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_x is between 0 and 100.
+            float move_y = throttle_y * MAX_LATERAL_COG_MOVE / 100;      // throttle_y is between 0 and 100.
+            float move_angle = 0;                                        // To be determined.
+
+            for (int ii = 0; ii < TIME_SAMPLE; ii++)
+            {
+                ty[ii] = move_x * ii / TIME_SAMPLE;
+                tx[ii] = ty[ii] * move_x / move_y + ty[ii] / move_y * (1 - ty[ii] / move_y) * (ty[ii] * (2 * move_x / move_y - tan(PI / 2 + move_angle)) - move_x);
+                alpha[ii] = move_angle * ii / TIME_SAMPLE;
+            }
+            leg_order[3] = 1;
+            leg_order[1] = 2;
+            leg_order[2] = 3;
+            leg_order[0] = 4;
+
+            for (int ii = 0; ii < LEG_NB; ii++)
+            {
+                leg_lifted[ii] = false;
+            }
+            moving_leg_nb = 4;
+            delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
+        }
+
+        for (int ii = 0; ii < TIME_SAMPLE; ii++)
+        {
+            reverse_tx[ii] = tx[TIME_SAMPLE - ii] * -1;
+            reverse_ty[ii] = ty[TIME_SAMPLE - ii] * -1;
+            reverse_alpha[ii] = alpha[TIME_SAMPLE - ii] * -1;
+        }
+
+        return NO_ERROR;
+    }
+
     bool establish_stableness()
     {
         float start_global_position[LEG_NB][2];
