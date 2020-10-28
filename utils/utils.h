@@ -251,54 +251,93 @@ struct Movement
 
     ErrorCode establish_cog_movement_advanced(int throttle_longitudinal, int throttle_lateral, int throttle_angle)
     {
-        if (throttle_longitudinal > 0 && abs(throttle_longitudinal) > abs(throttle_lateral))
-        // Moving forward.
+
+        float move_x = throttle_lateral * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between 0 and 100.
+        float move_y = throttle_longitudinal * MAX_LATERAL_COG_MOVE / 100; // throttle_lateral is between 0 and 100.
+        float move_angle = throttle_angle * MAX_ANGLE_COG_MOVE / 100;      // MAX_ANGLE_COG to be determined.
+
+        if (move_angle == 0 || move_y == 0)
         {
-            float move_x = throttle_longitudinal * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between 0 and 100.
-            float move_y = throttle_lateral * MAX_LATERAL_COG_MOVE / 100;           // throttle_lateral is between 0 and 100.
-            float move_angle = throttle_angle * MAX_ANGLE_COG_MOVE / 100;           // MAX_ANGLE_COG to be determined.
-
-            if (move_angle == 0 || move_y == 0)
+            for (int ii = 0; ii < TIME_SAMPLE; ii++)
             {
-                for (int ii = 0; ii < TIME_SAMPLE; ii++)
-                {
-                    ty[ii] = move_y * ii / TIME_SAMPLE;
-                    tx[ii] = move_x * ii / TIME_SAMPLE;
-                    alpha[ii] = move_angle * ii / TIME_SAMPLE;
-                }
+                ty[ii] = move_y * ii / TIME_SAMPLE;
+                tx[ii] = move_x * ii / TIME_SAMPLE;
+                alpha[ii] = move_angle * ii / TIME_SAMPLE;
             }
-            else
-            {
-                for (int ii = 0; ii < TIME_SAMPLE; ii++)
-                {
-                    ty[ii] = move_x * ii / TIME_SAMPLE;
-                    tx[ii] = ty[ii] * move_x / move_y + ty[ii] / move_y * (1 - ty[ii] / move_y) * (ty[ii] * (2 * move_x / move_y - tan(PI / 2 + move_angle)) - move_x);
-                    alpha[ii] = move_angle * ii / TIME_SAMPLE;
-                }
-            }
-
-            if (move_x < 0)
-            {
-                leg_order[3] = 1;
-                leg_order[1] = 2;
-                leg_order[2] = 3;
-                leg_order[0] = 4;
-            }
-            else
-            {
-                leg_order[2] = 1;
-                leg_order[0] = 2;
-                leg_order[3] = 3;
-                leg_order[1] = 4;
-            }
-
-            for (int ii = 0; ii < LEG_NB; ii++)
-            {
-                leg_lifted[ii] = false;
-            }
-            moving_leg_nb = 4;
-            delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
         }
+        else
+        {
+            for (int ii = 0; ii < TIME_SAMPLE; ii++)
+            {
+                ty[ii] = move_x * ii / TIME_SAMPLE;
+                tx[ii] = ty[ii] * move_x / move_y + ty[ii] / move_y * (1 - ty[ii] / move_y) * (ty[ii] * (2 * move_x / move_y - tan(PI / 2 + move_angle)) - move_x);
+                alpha[ii] = move_angle * ii / TIME_SAMPLE;
+            }
+        }
+
+        if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal > 0)
+        {
+            leg_order[2] = 1;
+            leg_order[0] = 2;
+            leg_order[3] = 3;
+            leg_order[1] = 4;
+        }
+        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
+        {
+            leg_order[3] = 1;
+            leg_order[1] = 2;
+            leg_order[2] = 3;
+            leg_order[0] = 4;
+        }
+        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
+        {
+            leg_order[0] = 1;
+            leg_order[2] = 2;
+            leg_order[1] = 3;
+            leg_order[3] = 4;
+        }
+        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
+        {
+            leg_order[1] = 1;
+            leg_order[3] = 2;
+            leg_order[0] = 3;
+            leg_order[2] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal > 0)
+        {
+            leg_order[2] = 1;
+            leg_order[3] = 2;
+            leg_order[0] = 3;
+            leg_order[1] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
+        {
+            leg_order[3] = 1;
+            leg_order[2] = 2;
+            leg_order[1] = 3;
+            leg_order[0] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
+        {
+            leg_order[0] = 1;
+            leg_order[1] = 2;
+            leg_order[2] = 3;
+            leg_order[3] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
+        {
+            leg_order[1] = 1;
+            leg_order[0] = 2;
+            leg_order[3] = 3;
+            leg_order[2] = 4;
+        }
+
+        for (int ii = 0; ii < LEG_NB; ii++)
+        {
+            leg_lifted[ii] = false;
+        }
+        moving_leg_nb = 4;
+        delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
 
         for (int ii = 0; ii < TIME_SAMPLE; ii++)
         {
@@ -312,49 +351,88 @@ struct Movement
 
     ErrorCode establish_cog_movement_stable(int throttle_longitudinal, int throttle_lateral, int throttle_angle)
     {
-        if (throttle_longitudinal > 0 && abs(throttle_longitudinal) > abs(throttle_lateral))
-        // Moving forward.
+
+        float move_x = throttle_lateral * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between 0 and 100.
+        float move_y = throttle_longitudinal * MAX_LATERAL_COG_MOVE / 100; // throttle_lateral is between 0 and 100.
+        float move_angle = throttle_angle * MAX_ANGLE_COG_MOVE / 100;      // MAX_ANGLE_COG_MOVE to be determined.
+
+        if (establish_stableness(move_x, move_y, move_angle))
         {
-            float move_x = throttle_longitudinal * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between 0 and 100.
-            float move_y = throttle_lateral * MAX_LATERAL_COG_MOVE / 100;           // throttle_lateral is between 0 and 100.
-            float move_angle = throttle_angle * MAX_ANGLE_COG_MOVE / 100;           // MAX_ANGLE_COG_MOVE to be determined.
-
-            if (establish_stableness(move_x, move_y, move_angle))
-            {
-            }
-
-            for (int ii = 0; ii < TIME_SAMPLE / 2; ii++)
-            {
-                ty[ii] = middle_point[1] * ii / (TIME_SAMPLE / 2);
-                ty[ii + TIME_SAMPLE / 2] = middle_point[1] + (move_y - middle_point[1]) * ii / (TIME_SAMPLE / 2);
-                tx[ii] = middle_point[0] * ii / TIME_SAMPLE;
-                tx[ii + TIME_SAMPLE / 2] = middle_point[0] + (move_x - middle_point[0]) * ii / (TIME_SAMPLE / 2);
-                alpha[ii] = move_angle * ii / TIME_SAMPLE;
-                alpha[ii + TIME_SAMPLE / 2] = move_angle * ii / TIME_SAMPLE;
-            }
-
-            if (move_x < 0)
-            {
-                leg_order[3] = 1;
-                leg_order[1] = 2;
-                leg_order[2] = 3;
-                leg_order[0] = 4;
-            }
-            else
-            {
-                leg_order[2] = 1;
-                leg_order[0] = 2;
-                leg_order[3] = 3;
-                leg_order[1] = 4;
-            }
-
-            for (int ii = 0; ii < LEG_NB; ii++)
-            {
-                leg_lifted[ii] = false;
-            }
-            moving_leg_nb = 4;
-            delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
         }
+
+        for (int ii = 0; ii < TIME_SAMPLE / 2; ii++)
+        {
+            ty[ii] = middle_point[1] * ii / (TIME_SAMPLE / 2);
+            ty[ii + TIME_SAMPLE / 2] = middle_point[1] + (move_y - middle_point[1]) * ii / (TIME_SAMPLE / 2);
+            tx[ii] = middle_point[0] * ii / TIME_SAMPLE;
+            tx[ii + TIME_SAMPLE / 2] = middle_point[0] + (move_x - middle_point[0]) * ii / (TIME_SAMPLE / 2);
+            alpha[ii] = move_angle * ii / TIME_SAMPLE;
+            alpha[ii + TIME_SAMPLE / 2] = move_angle * ii / TIME_SAMPLE;
+        }
+
+        if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal > 0)
+        {
+            leg_order[2] = 1;
+            leg_order[0] = 2;
+            leg_order[3] = 3;
+            leg_order[1] = 4;
+        }
+        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
+        {
+            leg_order[3] = 1;
+            leg_order[1] = 2;
+            leg_order[2] = 3;
+            leg_order[0] = 4;
+        }
+        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
+        {
+            leg_order[0] = 1;
+            leg_order[2] = 2;
+            leg_order[1] = 3;
+            leg_order[3] = 4;
+        }
+        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
+        {
+            leg_order[1] = 1;
+            leg_order[3] = 2;
+            leg_order[0] = 3;
+            leg_order[2] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal > 0)
+        {
+            leg_order[2] = 1;
+            leg_order[3] = 2;
+            leg_order[0] = 3;
+            leg_order[1] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
+        {
+            leg_order[3] = 1;
+            leg_order[2] = 2;
+            leg_order[1] = 3;
+            leg_order[0] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
+        {
+            leg_order[0] = 1;
+            leg_order[1] = 2;
+            leg_order[2] = 3;
+            leg_order[3] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
+        {
+            leg_order[1] = 1;
+            leg_order[0] = 2;
+            leg_order[3] = 3;
+            leg_order[2] = 4;
+        }
+
+        for (int ii = 0; ii < LEG_NB; ii++)
+        {
+            leg_lifted[ii] = false;
+        }
+        moving_leg_nb = 4;
+        delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
 
         for (int ii = 0; ii < TIME_SAMPLE; ii++)
         {
