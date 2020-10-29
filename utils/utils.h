@@ -372,59 +372,59 @@ struct Movement
 
         if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal > 0)
         {
-            leg_order[2] = 1;
-            leg_order[0] = 2;
-            leg_order[3] = 3;
-            leg_order[1] = 4;
+            leg_order[3] = 1;
+            leg_order[1] = 2;
+            leg_order[2] = 3;
+            leg_order[0] = 4;
         }
         else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
         {
-            leg_order[3] = 1;
-            leg_order[1] = 2;
-            leg_order[2] = 3;
-            leg_order[0] = 4;
+            leg_order[2] = 1;
+            leg_order[0] = 2;
+            leg_order[3] = 3;
+            leg_order[1] = 4;
         }
         else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
-        {
-            leg_order[0] = 1;
-            leg_order[2] = 2;
-            leg_order[1] = 3;
-            leg_order[3] = 4;
-        }
-        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
         {
             leg_order[1] = 1;
             leg_order[3] = 2;
             leg_order[0] = 3;
             leg_order[2] = 4;
         }
+        else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
+        {
+            leg_order[0] = 1;
+            leg_order[2] = 2;
+            leg_order[1] = 3;
+            leg_order[3] = 4;
+        }
         else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal > 0)
+        {
+            leg_order[0] = 1;
+            leg_order[1] = 2;
+            leg_order[2] = 3;
+            leg_order[3] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
+        {
+            leg_order[1] = 1;
+            leg_order[0] = 2;
+            leg_order[3] = 3;
+            leg_order[2] = 4;
+        }
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
         {
             leg_order[2] = 1;
             leg_order[3] = 2;
             leg_order[0] = 3;
             leg_order[1] = 4;
         }
-        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
+        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
         {
             leg_order[3] = 1;
             leg_order[2] = 2;
             leg_order[1] = 3;
             leg_order[0] = 4;
-        }
-        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
-        {
-            leg_order[0] = 1;
-            leg_order[1] = 2;
-            leg_order[2] = 3;
-            leg_order[3] = 4;
-        }
-        else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
-        {
-            leg_order[1] = 1;
-            leg_order[0] = 2;
-            leg_order[3] = 3;
-            leg_order[2] = 4;
         }
 
         for (int ii = 0; ii < LEG_NB; ii++)
