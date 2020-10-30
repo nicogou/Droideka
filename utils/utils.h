@@ -187,7 +187,7 @@ struct Movement
 
     int leg_order[LEG_NB];
     int first_leg_to_move;
-    int last_leg_to_move;
+    bool reverse_angle;
     bool leg_lifted[LEG_NB];
     int moving_leg_nb = 0;
     unsigned long delta_time;
@@ -256,8 +256,8 @@ struct Movement
     ErrorCode establish_cog_movement_advanced(int throttle_longitudinal, int throttle_lateral, int throttle_angle)
     {
 
-        float move_x = throttle_lateral * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between 0 and 100.
-        float move_y = throttle_longitudinal * MAX_LATERAL_COG_MOVE / 100; // throttle_lateral is between 0 and 100.
+        float move_x = throttle_lateral * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between -100 and 100.
+        float move_y = throttle_longitudinal * MAX_LATERAL_COG_MOVE / 100; // throttle_lateral is between -100 and 100.
         float move_angle = throttle_angle * MAX_ANGLE_COG_MOVE / 100;      // MAX_ANGLE_COG to be determined.
 
         if (move_angle == 0 || move_y == 0)
@@ -356,52 +356,100 @@ struct Movement
     ErrorCode establish_cog_movement_stable(int throttle_longitudinal, int throttle_lateral, int throttle_angle)
     {
 
-        float move_x = throttle_lateral * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between 0 and 100.
-        float move_y = throttle_longitudinal * MAX_LATERAL_COG_MOVE / 100; // throttle_lateral is between 0 and 100.
+        float move_x = throttle_lateral * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between -100 and 100.
+        float move_y = throttle_longitudinal * MAX_LATERAL_COG_MOVE / 100; // throttle_lateral is between -100 and 100.
         float move_angle = throttle_angle * MAX_ANGLE_COG_MOVE / 100;      // MAX_ANGLE_COG_MOVE to be determined.
-
-        if (establish_stableness(move_x, move_y, move_angle))
-        {
-        }
-
-        for (int ii = 0; ii < TIME_SAMPLE / 2; ii++)
-        {
-            ty[ii] = middle_point[1] * ii / (TIME_SAMPLE / 2);
-            ty[ii + TIME_SAMPLE / 2] = middle_point[1] + (move_y - middle_point[1]) * ii / (TIME_SAMPLE / 2);
-            tx[ii] = middle_point[0] * ii / TIME_SAMPLE;
-            tx[ii + TIME_SAMPLE / 2] = middle_point[0] + (move_x - middle_point[0]) * ii / (TIME_SAMPLE / 2);
-            alpha[ii] = move_angle * ii / TIME_SAMPLE;
-            alpha[ii + TIME_SAMPLE / 2] = move_angle * ii / TIME_SAMPLE;
-        }
 
         establish_leg_order(throttle_longitudinal, throttle_lateral);
 
-        for (int ii = 0; ii < LEG_NB; ii++)
+        if (establish_stableness(move_x, move_y, move_angle))
         {
-            leg_lifted[ii] = false;
-        }
-        moving_leg_nb = 4;
-        delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
 
-        for (int ii = 0; ii < TIME_SAMPLE; ii++)
+            for (int ii = 0; ii < TIME_SAMPLE / 2; ii++)
+            {
+                ty[ii] = middle_point[1] * ii / (TIME_SAMPLE / 2);
+                ty[ii + TIME_SAMPLE / 2] = middle_point[1] + (move_y - middle_point[1]) * ii / (TIME_SAMPLE / 2);
+                tx[ii] = middle_point[0] * ii / TIME_SAMPLE;
+                tx[ii + TIME_SAMPLE / 2] = middle_point[0] + (move_x - middle_point[0]) * ii / (TIME_SAMPLE / 2);
+                alpha[ii] = move_angle * ii / TIME_SAMPLE;
+                alpha[ii + TIME_SAMPLE / 2] = move_angle * ii / TIME_SAMPLE;
+            }
+
+            for (int ii = 0; ii < LEG_NB; ii++)
+            {
+                leg_lifted[ii] = false;
+            }
+            moving_leg_nb = 4;
+            delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
+
+            for (int ii = 0; ii < TIME_SAMPLE; ii++)
+            {
+                reverse_tx[ii] = tx[TIME_SAMPLE - ii] * -1;
+                reverse_ty[ii] = ty[TIME_SAMPLE - ii] * -1;
+                reverse_alpha[ii] = alpha[TIME_SAMPLE - ii] * -1;
+            }
+
+            return NO_ERROR;
+        }
+    }
+
+    ErrorCode establish_cog_movement_next_level(int throttle_longitudinal, int throttle_lateral, int throttle_angle)
+    {
+        float move_x = throttle_lateral * MAX_LONGITUDINAL_COG_MOVE / 100; // throttle_longitudinal is between -100 and 100.
+        float move_y = throttle_longitudinal * MAX_LATERAL_COG_MOVE / 100; // throttle_lateral is between -100 and 100.
+        float move_angle;
+
+        if (find_extreme_alpha(throttle_longitudinal, throttle_lateral, move_y, move_x))
         {
-            reverse_tx[ii] = tx[TIME_SAMPLE - ii] * -1;
-            reverse_ty[ii] = ty[TIME_SAMPLE - ii] * -1;
-            reverse_alpha[ii] = alpha[TIME_SAMPLE - ii] * -1;
+            if (throttle_angle >= 0)
+            {
+                move_angle = throttle_angle * alpha_max / 100;
+            }
+            else
+            {
+                move_angle = throttle_angle * alpha_min / 100;
+            }
         }
 
-        return NO_ERROR;
+        if (establish_stableness(move_x, move_y, move_angle))
+        {
+            for (int ii = 0; ii < TIME_SAMPLE / 2; ii++)
+            {
+                ty[ii] = middle_point[1] * ii / (TIME_SAMPLE / 2);
+                ty[ii + TIME_SAMPLE / 2] = middle_point[1] + (move_y - middle_point[1]) * ii / (TIME_SAMPLE / 2);
+                tx[ii] = middle_point[0] * ii / TIME_SAMPLE;
+                tx[ii + TIME_SAMPLE / 2] = middle_point[0] + (move_x - middle_point[0]) * ii / (TIME_SAMPLE / 2);
+                alpha[ii] = move_angle * ii / TIME_SAMPLE;
+                alpha[ii + TIME_SAMPLE / 2] = move_angle * ii / TIME_SAMPLE;
+            }
+
+            for (int ii = 0; ii < LEG_NB; ii++)
+            {
+                leg_lifted[ii] = false;
+            }
+            moving_leg_nb = 4;
+            delta_time = TIME_SAMPLE / (moving_leg_nb * 4);
+
+            for (int ii = 0; ii < TIME_SAMPLE; ii++)
+            {
+                reverse_tx[ii] = tx[TIME_SAMPLE - ii] * -1;
+                reverse_ty[ii] = ty[TIME_SAMPLE - ii] * -1;
+                reverse_alpha[ii] = alpha[TIME_SAMPLE - ii] * -1;
+            }
+
+            return NO_ERROR;
+        }
     }
 
     bool establish_stableness(float move_longitudinal, float move_lateral, float move_angle)
     {
         float start_global_position[LEG_NB][2];
         float final_global_position[LEG_NB][2];
-        float pairs[3][2][2]; // 0 = first pair, 1 = second pair, 3 = CoG deltas
-        float abc[3][3];      // 0 = first pair, 1 = second pair, 3 = CoG deltas. 0 = a, 1 = b, 2 = c (ax + by + c = 0).
-        float intersection[2][2];
+        float pairs[2][2][2]; // 0 = first pair, 1 = second pair, 3 = CoG deltas
+        float abc[2][3];      // 0 = first pair, 1 = second pair, 3 = CoG deltas. 0 = a, 1 = b, 2 = c (ax + by + c = 0).
+        float intersection[2];
         float mid_cog[2];
-        float distances[2];
+        float distance;
         int chosen_pair;
 
         for (int ii = 0; ii < LEG_NB; ii++)
@@ -410,56 +458,34 @@ struct Movement
             start_global_position[ii][1] = shoulder_pos[ii][1] + shoulder_mult[ii][1] * start_position.legs[ii][1] * sin(start_position.legs[ii][0]);
             final_global_position[ii][0] = move_longitudinal + start_global_position[ii][0] * cos(move_angle) - start_global_position[ii][1] * sin(move_angle);
             final_global_position[ii][1] = move_lateral + start_global_position[ii][0] * sin(move_angle) + start_global_position[ii][1] * cos(move_angle);
-
-            if (leg_order[ii] == 1)
-            {
-                pairs[0][0][0] = final_global_position[ii][0];
-                pairs[0][0][1] = final_global_position[ii][1];
-                pairs[0][1][0] = start_global_position[3 - ii][0];
-                pairs[0][1][1] = start_global_position[3 - ii][1];
-            }
-            if (leg_order[ii] = 3)
-            {
-                pairs[1][0][0] = final_global_position[ii][0];
-                pairs[1][0][1] = final_global_position[ii][1];
-                pairs[1][1][0] = start_global_position[3 - ii][0];
-                pairs[1][1][1] = start_global_position[3 - ii][1];
-            }
         }
 
-        pairs[2][0][0] = 0;
-        pairs[2][0][1] = 0;
-        pairs[2][1][0] = move_longitudinal;
-        pairs[2][1][1] = move_lateral;
+        pairs[0][0][0] = final_global_position[first_leg_to_move][0];
+        pairs[0][0][1] = final_global_position[first_leg_to_move][1];
+        pairs[0][1][0] = start_global_position[3 - first_leg_to_move][0];
+        pairs[0][1][1] = start_global_position[3 - first_leg_to_move][1];
 
-        for (int ii = 0; ii < 3; ii++)
+        pairs[1][0][0] = 0;
+        pairs[1][0][1] = 0;
+        pairs[1][1][0] = move_longitudinal;
+        pairs[1][1][1] = move_lateral;
+
+        for (int ii = 0; ii < 2; ii++)
         {
             abc[ii][0] = -(pairs[ii][1][1] - pairs[ii][0][1]) / (pairs[ii][1][0] - pairs[ii][0][0]);
             abc[ii][1] = 1;
             abc[ii][2] = -pairs[ii][1][1] + (pairs[ii][1][1] - pairs[ii][0][1]) / (pairs[ii][1][0] - pairs[ii][0][0]) * pairs[ii][1][0];
         }
 
-        mid_cog[0] = (pairs[2][0][0] + pairs[2][1][0]) / 2;
-        mid_cog[1] = (pairs[2][0][1] + pairs[2][1][1]) / 2;
+        mid_cog[0] = (pairs[1][0][0] + pairs[1][1][0]) / 2;
+        mid_cog[1] = (pairs[1][0][1] + pairs[1][1][1]) / 2;
 
-        intersection[0][0] = (abc[0][1] * abc[2][2] - abc[2][1] * abc[0][2]) / (abc[0][0] * abc[2][1] - abc[2][0] * abc[0][2]);
-        intersection[0][1] = (abc[2][0] * abc[0][2] - abc[0][0] * abc[2][2]) / (abc[0][0] * abc[2][1] - abc[2][0] * abc[0][2]);
-        intersection[1][0] = (abc[1][1] * abc[2][2] - abc[2][1] * abc[1][2]) / (abc[1][0] * abc[2][1] - abc[2][0] * abc[1][2]);
-        intersection[1][1] = (abc[2][0] * abc[1][2] - abc[1][0] * abc[2][2]) / (abc[1][0] * abc[2][1] - abc[2][0] * abc[1][2]);
+        intersection[0] = (abc[0][1] * abc[1][2] - abc[1][1] * abc[0][2]) / (abc[0][0] * abc[1][1] - abc[1][0] * abc[0][2]);
+        intersection[1] = (abc[1][0] * abc[0][2] - abc[0][0] * abc[1][2]) / (abc[0][0] * abc[1][1] - abc[1][0] * abc[0][2]);
 
-        distances[0] = sqrt((mid_cog[0] - intersection[0][0]) * (mid_cog[0] - intersection[0][0]) + (mid_cog[1] - intersection[0][1]) * (mid_cog[1] - intersection[0][1]));
-        distances[1] = sqrt((mid_cog[0] - intersection[1][0]) * (mid_cog[0] - intersection[1][0]) + (mid_cog[1] - intersection[1][1]) * (mid_cog[1] - intersection[1][1]));
+        distance = sqrt((mid_cog[0] - intersection[0]) * (mid_cog[0] - intersection[0]) + (mid_cog[1] - intersection[1]) * (mid_cog[1] - intersection[1]));
 
-        if (distances[0] <= distances[1])
-        {
-            chosen_pair = 0;
-        }
-        else
-        {
-            chosen_pair = 1;
-        }
-
-        if (intersection[chosen_pair][0] < pairs[2][chosen_pair][0] || intersection[chosen_pair][0] > pairs[2][chosen_pair][0] || intersection[chosen_pair][1] < pairs[2][chosen_pair][1] || intersection[chosen_pair][1] > pairs[2][chosen_pair][1])
+        if (intersection[0] < min(pairs[1][0][0], pairs[1][1][0]) || intersection[0] > max(pairs[1][0][0], pairs[1][1][0]) || intersection[1] < min(pairs[1][0][1], pairs[1][1][1]) || intersection[1] > max(pairs[1][0][1], pairs[1][1][1]))
         {
             // Unstable position
             middle_point[0] = 0;
@@ -470,20 +496,21 @@ struct Movement
         else
         {
             // Stable position
-            middle_point[0] = intersection[chosen_pair][0];
-            middle_point[1] = intersection[chosen_pair][1];
+            middle_point[0] = intersection[0];
+            middle_point[1] = intersection[1];
             stable_movement = true;
             return true;
         }
     }
 
-    bool establish_stableness_next_level(float throttle_longitudinal, float throttle_lateral, float move_longitudinal, float move_lateral)
+    bool find_extreme_alpha(float throttle_longitudinal, float throttle_lateral, float move_longitudinal, float move_lateral)
     {
         establish_leg_order(throttle_longitudinal, throttle_lateral);
         float start_global_position[LEG_NB][2];
         float distance_CoG_foot;
         float distance_foot_newCoG;
         float distance_CoG_newCoG;
+        float temp_alpha;
 
         for (int ii = 0; ii < LEG_NB; ii++)
         {
@@ -495,7 +522,15 @@ struct Movement
         distance_CoG_newCoG = sqrt(move_lateral * move_lateral + move_longitudinal * move_longitudinal);
         distance_foot_newCoG = sqrt((move_lateral - start_global_position[2 - first_leg_to_move][0]) * (move_lateral - start_global_position[2 - first_leg_to_move][0]) + (move_longitudinal - start_global_position[2 - first_leg_to_move][1]) * (move_longitudinal - start_global_position[2 - first_leg_to_move][1]));
 
-        alpha_max = acos((distance_CoG_newCoG * distance_CoG_newCoG - distance_foot_newCoG * distance_foot_newCoG - distance_CoG_foot * distance_CoG_foot) / (2 * distance_CoG_foot * distance_foot_newCoG));
+        temp_alpha = acos((distance_CoG_newCoG * distance_CoG_newCoG - distance_foot_newCoG * distance_foot_newCoG - distance_CoG_foot * distance_CoG_foot) / (2 * distance_CoG_foot * distance_foot_newCoG));
+        if (reverse_angle)
+        {
+            alpha_min = temp_alpha;
+        }
+        else
+        {
+            alpha_max = temp_alpha;
+        }
 
         float a = 1 + start_global_position[2 - first_leg_to_move][1] * start_global_position[2 - first_leg_to_move][1] / (start_global_position[2 - first_leg_to_move][0] * start_global_position[2 - first_leg_to_move][0]);
         float b = -2 * move_lateral - 2 * start_global_position[2 - first_leg_to_move][1] * move_longitudinal * start_global_position[2 - first_leg_to_move][0];
@@ -504,6 +539,22 @@ struct Movement
         float X = (-b + sqrt(b * b - 4 * a * c)) / (2 * a); // Ou avec un moins : déterminer lequel utiliser...
         float Y = start_global_position[2 - first_leg_to_move][1] / start_global_position[2 - first_leg_to_move][0] * X;
         // TO BE CONTINUED WITH alpha_min...
+
+        float distance_newCoG_newFoot_NoAlpha = distance_CoG_foot;
+        float distance_newCoG_alphaMin = sqrt((move_lateral - X) * (move_lateral - X) + (move_longitudinal - Y) * (move_longitudinal - Y));
+        float distance_newFoot_NoAlpha_alphaMin = sqrt((start_global_position[first_leg_to_move][0] + move_lateral - X) * (start_global_position[first_leg_to_move][0] + move_lateral - X) + (start_global_position[first_leg_to_move][1] + move_longitudinal - Y) * (start_global_position[first_leg_to_move][1] + move_longitudinal - Y));
+
+        temp_alpha = acos((distance_newFoot_NoAlpha_alphaMin * distance_newFoot_NoAlpha_alphaMin - distance_newCoG_alphaMin * distance_newCoG_alphaMin - distance_newCoG_newFoot_NoAlpha * distance_newCoG_newFoot_NoAlpha) / (2 * distance_newCoG_alphaMin * distance_newCoG_newFoot_NoAlpha));
+        if (reverse_angle)
+        {
+            alpha_max = temp_alpha;
+        }
+        else
+        {
+            alpha_min = temp_alpha;
+        }
+
+        return true;
     }
 
     void establish_leg_order(float throttle_longitudinal, float throttle_lateral)
@@ -515,7 +566,7 @@ struct Movement
             leg_order[2] = 3;
             leg_order[0] = 4;
             first_leg_to_move = 3;
-            last_leg_to_move = 0;
+            reverse_angle = false;
         }
         else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
         {
@@ -524,7 +575,7 @@ struct Movement
             leg_order[3] = 3;
             leg_order[1] = 4;
             first_leg_to_move = 2;
-            last_leg_to_move = 1;
+            reverse_angle = true;
         }
         else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
         {
@@ -533,7 +584,7 @@ struct Movement
             leg_order[0] = 3;
             leg_order[2] = 4;
             first_leg_to_move = 1;
-            last_leg_to_move = 2;
+            reverse_angle = true;
         }
         else if (abs(throttle_longitudinal) > abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
         {
@@ -542,7 +593,7 @@ struct Movement
             leg_order[1] = 3;
             leg_order[3] = 4;
             first_leg_to_move = 0;
-            last_leg_to_move = 3;
+            reverse_angle = false;
         }
         else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal > 0)
         {
@@ -551,7 +602,7 @@ struct Movement
             leg_order[2] = 3;
             leg_order[3] = 4;
             first_leg_to_move = 0;
-            last_leg_to_move = 3;
+            reverse_angle = false;
         }
         else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal > 0)
         {
@@ -560,7 +611,7 @@ struct Movement
             leg_order[3] = 3;
             leg_order[2] = 4;
             first_leg_to_move = 1;
-            last_leg_to_move = 2;
+            reverse_angle = true;
         }
         else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral > 0 && throttle_longitudinal < 0)
         {
@@ -569,7 +620,7 @@ struct Movement
             leg_order[0] = 3;
             leg_order[1] = 4;
             first_leg_to_move = 2;
-            last_leg_to_move = 1;
+            reverse_angle = true;
         }
         else if (abs(throttle_longitudinal) < abs(throttle_lateral) && throttle_lateral < 0 && throttle_longitudinal < 0)
         {
@@ -578,7 +629,7 @@ struct Movement
             leg_order[1] = 3;
             leg_order[0] = 4;
             first_leg_to_move = 3;
-            last_leg_to_move = 0;
+            reverse_angle = false;
         }
     }
 
