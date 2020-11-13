@@ -544,7 +544,21 @@ struct Movement
         float b = -2 * move_lateral - 2 * start_global_position[2 - first_leg_to_move][1] * move_longitudinal / start_global_position[2 - first_leg_to_move][0];
         float c = distance_CoG_newCoG * distance_CoG_newCoG - distance_CoG_foot * distance_CoG_foot;
 
-        float X = (-b + sqrt(b * b - 4 * a * c)) / (2 * a); // Ou avec un moins : déterminer lequel utiliser...
+        float X_plus = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
+        float X_minus = (-b - sqrt(b * b - 4 * a * c)) / (2 * a);
+        float Y_plus = start_global_position[2 - first_leg_to_move][1] / start_global_position[2 - first_leg_to_move][0] * X_plus;
+        float Y_minus = start_global_position[2 - first_leg_to_move][1] / start_global_position[2 - first_leg_to_move][0] * X_minus;
+        float X;
+        float distance_plus = sqrt((start_global_position[first_leg_to_move][0] + move_x - X_plus) * (start_global_position[first_leg_to_move][0] + move_x - X_plus) + (start_global_position[first_leg_to_move][1] + move_y - Y_plus) * (start_global_position[first_leg_to_move][1] + move_y - Y_plus));
+        float distance_minus = sqrt((start_global_position[first_leg_to_move][0] + move_x - X_minus) * (start_global_position[first_leg_to_move][0] + move_x - X_minus) + (start_global_position[first_leg_to_move][1] + move_y - Y_minus) * (start_global_position[first_leg_to_move][1] + move_y - Y_minus));
+        if (distance_plus <= distance_minus)
+        {
+            X = X_plus;
+        }
+        else
+        {
+            X = X_minus;
+        }
         float Y = start_global_position[2 - first_leg_to_move][1] / start_global_position[2 - first_leg_to_move][0] * X;
         // TO BE CONTINUED WITH alpha_min...
 
