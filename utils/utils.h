@@ -541,7 +541,7 @@ struct Movement
         }
 
         float a = 1 + start_global_position[2 - first_leg_to_move][1] * start_global_position[2 - first_leg_to_move][1] / (start_global_position[2 - first_leg_to_move][0] * start_global_position[2 - first_leg_to_move][0]);
-        float b = -2 * move_lateral - 2 * start_global_position[2 - first_leg_to_move][1] * move_longitudinal * start_global_position[2 - first_leg_to_move][0];
+        float b = -2 * move_lateral - 2 * start_global_position[2 - first_leg_to_move][1] * move_longitudinal / start_global_position[2 - first_leg_to_move][0];
         float c = distance_CoG_newCoG * distance_CoG_newCoG - distance_CoG_foot * distance_CoG_foot;
 
         float X = (-b + sqrt(b * b - 4 * a * c)) / (2 * a); // Ou avec un moins : déterminer lequel utiliser...
