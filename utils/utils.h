@@ -6,7 +6,7 @@
 #define HIP_LENGTH 7
 #define BODY_LENGTH 26.1 // TODO: verifier la valeur
 #define BODY_WIDTH 18.0  // TODO: verifier la valeur
-#define TIME_SAMPLE 1200
+#define TIME_SAMPLE 120
 #define MAX_LONGITUDINAL_COG_MOVE BODY_LENGTH / 10
 #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
 #define MAX_ANGLE_COG_MOVE 1
@@ -24,32 +24,39 @@
 #define SERVO_BUS_WRITE_PIN_FRONT 13
 #define SERVO_BUS_WRITE_PIN_BACK 13
 
-float parked[LEG_NB][3] = {
-    {THETA_PARKING, X_PARKING, Y_PARKING},
-    {THETA_PARKING, X_PARKING, Y_PARKING},
-    {THETA_PARKING, X_PARKING, Y_PARKING},
-    {THETA_PARKING, X_PARKING, Y_PARKING}};
-float unparking[LEG_NB][3] = {
-    {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
-    {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
-    {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
-    {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING}};
-float unparked[LEG_NB][3] = {
-    {THETA_IDLE, X_IDLE, Y_TOUCHING},
-    {THETA_IDLE, X_IDLE, Y_TOUCHING},
-    {THETA_IDLE, X_IDLE, Y_TOUCHING},
-    {THETA_IDLE, X_IDLE, Y_TOUCHING}};
+enum DroidekaMode
+{
+    WALKING = 0,
+    ROLLING = 1,
+};
+typedef enum DroidekaMode DroidekaMode;
 
-float shoulder_pos[LEG_NB][2] = {
-    {-BODY_WIDTH / 2, BODY_LENGTH / 2},
-    {BODY_WIDTH / 2, BODY_LENGTH / 2},
-    {-BODY_WIDTH / 2, -BODY_LENGTH / 2},
-    {BODY_WIDTH / 2, -BODY_LENGTH / 2}};
-float shoulder_mult[LEG_NB][2] = {
-    {-1, 1},
-    {1, 1},
-    {-1, -1},
-    {1, -1}};
+enum ErrorCode
+{
+    WAITING = 0,
+
+    NO_ERROR = 1,
+
+    WRONG_MOTOR_SPECIFIED = 100,
+    OUT_OF_BOUNDS_SPEED_SPECIFIED = 101,
+
+    OUT_OF_BOUNDS_SHOULDER_ANGLE = 200,
+    OUT_OF_BOUNDS_HIP_ANGLE = 201,
+    OUT_OF_BOUNDS_KNEE_ANGLE = 202,
+
+    PARKING_POSITION_NOT_UPDATED = 300,
+    PARKING_TRANSITION_POSITION_IMPOSSIBLE = 301,
+    PARKING_POSITION_IMPOSSIBLE = 302,
+    STARTING_WALKING_POSITION_IMPOSSIBLE = 303,
+
+    POSITION_UNREACHABLE = 400,
+    INVALID_MOVEMENT = 401,
+
+    ROBOT_ALREADY_PARKED = 500,
+    ROBOT_ALREADY_UNPARKED = 501,
+    ROBOT_PARKED_WHEN_ASKED_TO_MOVE = 502,
+};
+typedef enum ErrorCode ErrorCode;
 
 struct State
 {
@@ -204,6 +211,17 @@ struct Movement
     float reverse_alpha[TIME_SAMPLE];
 
     float middle_point[2];
+
+    float shoulder_pos[LEG_NB][2] = {
+        {-BODY_WIDTH / 2, BODY_LENGTH / 2},
+        {BODY_WIDTH / 2, BODY_LENGTH / 2},
+        {-BODY_WIDTH / 2, -BODY_LENGTH / 2},
+        {BODY_WIDTH / 2, -BODY_LENGTH / 2}};
+    float shoulder_mult[LEG_NB][2] = {
+        {-1, 1},
+        {1, 1},
+        {-1, -1},
+        {1, -1}};
 
     Movement::Movement() {}
 
@@ -788,37 +806,3 @@ struct Movement
         return NO_ERROR;
     }
 };
-
-enum DroidekaMode
-{
-    WALKING = 0,
-    ROLLING = 1,
-};
-typedef enum DroidekaMode DroidekaMode;
-
-enum ErrorCode
-{
-    WAITING = 0,
-
-    NO_ERROR = 1,
-
-    WRONG_MOTOR_SPECIFIED = 100,
-    OUT_OF_BOUNDS_SPEED_SPECIFIED = 101,
-
-    OUT_OF_BOUNDS_SHOULDER_ANGLE = 200,
-    OUT_OF_BOUNDS_HIP_ANGLE = 201,
-    OUT_OF_BOUNDS_KNEE_ANGLE = 202,
-
-    PARKING_POSITION_NOT_UPDATED = 300,
-    PARKING_TRANSITION_POSITION_IMPOSSIBLE = 301,
-    PARKING_POSITION_IMPOSSIBLE = 302,
-    STARTING_WALKING_POSITION_IMPOSSIBLE = 303,
-
-    POSITION_UNREACHABLE = 400,
-    INVALID_MOVEMENT = 401,
-
-    ROBOT_ALREADY_PARKED = 500,
-    ROBOT_ALREADY_UNPARKED = 501,
-    ROBOT_PARKED_WHEN_ASKED_TO_MOVE = 502,
-};
-typedef enum ErrorCode ErrorCode;

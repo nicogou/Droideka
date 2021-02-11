@@ -109,6 +109,22 @@ public:
     Droideka_Position current_position;
     Movement movement;
 
+    float parked[LEG_NB][3] = {
+        {THETA_PARKING, X_PARKING, Y_PARKING},
+        {THETA_PARKING, X_PARKING, Y_PARKING},
+        {THETA_PARKING, X_PARKING, Y_PARKING},
+        {THETA_PARKING, X_PARKING, Y_PARKING}};
+    float unparking[LEG_NB][3] = {
+        {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
+        {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
+        {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
+        {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING}};
+    float unparked[LEG_NB][3] = {
+        {THETA_IDLE, X_IDLE, Y_TOUCHING},
+        {THETA_IDLE, X_IDLE, Y_TOUCHING},
+        {THETA_IDLE, X_IDLE, Y_TOUCHING},
+        {THETA_IDLE, X_IDLE, Y_TOUCHING}};
+
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
     // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).
     const int extreme_values_motor[MOTOR_NB][4] = {
