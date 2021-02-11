@@ -9,6 +9,16 @@
 
 Droideka *droid_1;
 
+void print_(String string, bool newline = false)
+{
+    string = string + "\t";
+    Serial.print(string);
+    if (newline)
+    {
+        Serial.println();
+    }
+}
+
 int time = 2000;
 int time_offset = 2000;
 
@@ -21,6 +31,15 @@ void setup()
     droid_1->initialize(LMP1, LMP2, LMP_PWM, REC_RX, REC_TX, REC_STATE);
 
     Serial.println("Start");
+
+    State *lastState = droid_1->read_debug_board_positions();
+    print_("Timestamp: " + String(lastState->timestamp), true);
+    for (int ii = 0; ii < MOTOR_NB; ii++)
+    {
+        print_("Motor n" + String(ii) + " : " + String(lastState->positions[ii]) + "\t\t updated:" + String(lastState->is_position_updated[ii]), true);
+    }
+
+    Serial.println("Start");
 }
 
 void loop()
@@ -29,10 +48,17 @@ void loop()
     if (test)
     {
         Serial.print("Received\t\t");
+        print_("Button 1: " + String(droid_1->button1));
+        print_("Button 2: " + String(droid_1->button2));
+        print_("Button 3: " + String(droid_1->button3));
+        print_("Throttle X: " + String(droid_1->throttle_x));
+        print_("Throttle Y: " + String(droid_1->throttle_y));
+        print_("", true);
         if (droid_1->button2_clicked())
         {
             droid_1->change_mode();
         }
+        Serial.println();
+        // droid_1->move(droid_1->throttle_x);
     }
-    droid_1->move(droid_1->throttle_x);
 }

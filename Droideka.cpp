@@ -277,11 +277,12 @@ DroidekaMode Droideka::get_mode()
 
 ErrorCode Droideka::change_mode()
 {
-  if (get_mode() == WALKING)
+  DroidekaMode mode = get_mode();
+  if (mode == WALKING)
   {
     park();
   }
-  else if (get_mode() == ROLLING)
+  else if (mode == ROLLING)
   {
     unpark();
   }
@@ -353,10 +354,11 @@ ErrorCode Droideka::park(int time = 1000)
   current_position = get_current_position();
   for (int ii = 0; ii < LEG_NB; ii++)
   {
-    current_position.legs[ii][2] = Y_PARKING;
+    current_position.legs[ii][2] = Y_NOT_TOUCHING;
   }
 
   ErrorCode result = move_into_position(current_position, time);
+  delay(time);
 
   result = move_into_position(parked, time);
   return result;
@@ -364,11 +366,12 @@ ErrorCode Droideka::park(int time = 1000)
 
 ErrorCode Droideka::unpark(int time = 1000)
 {
-  Droideka_Position unparking(unparking);
-  ErrorCode result = move_into_position(unparking, time);
+  Droideka_Position unparking_(unparking);
+  ErrorCode result = move_into_position(unparking_, time);
+  delay(time);
 
-  Droideka_Position unparked(unparked);
-  result = move_into_position(unparked, time);
+  Droideka_Position unparked_(unparked);
+  result = move_into_position(unparked_, time);
   return result;
 }
 
@@ -413,7 +416,24 @@ ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 80
 Droideka_Position Droideka::get_current_position()
 {
   // Il faut récupérer le lastState_ des servos, transformer cela en radians, puis degrés, puis en Droideka_Position.
-  State *lastState = read_debug_board_positions();
+  // State *lastState = read_debug_board_positions();
+  State *lastState;
+  lastState = read_debug_board_positions();
+  // int ii_t = 0;  // Permet de compter le nombre d'itérations nécessaires à une bonne lecture de la position des moteurs.
+  while (lastState->correct_motor_reading == false)
+  {
+    // ii_t++;
+    lastState = read_debug_board_positions();
+    bool temp = 1;
+    for (int ii = 0; ii < MOTOR_NB; ii++)
+    {
+      temp *= lastState->is_position_updated[ii];
+    }
+    lastState->correct_motor_reading = temp;
+  }
+  // Serial.print("Nb de boucles: ");
+  // Serial.println(ii_t);
+
   int angle_deg[MOTOR_NB];
   float temp[LEG_NB][3];
 

@@ -6,7 +6,7 @@
 #define HIP_LENGTH 7
 #define BODY_LENGTH 26.1 // TODO: verifier la valeur
 #define BODY_WIDTH 18.0  // TODO: verifier la valeur
-#define TIME_SAMPLE 120
+#define TIME_SAMPLE 10
 #define MAX_LONGITUDINAL_COG_MOVE BODY_LENGTH / 10
 #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
 #define MAX_ANGLE_COG_MOVE 1
@@ -63,7 +63,7 @@ struct State
     unsigned long timestamp;
     int positions[MOTOR_NB];
     bool is_position_updated[MOTOR_NB];
-    bool correct_motor_reading;
+    bool correct_motor_reading = false;
 };
 
 struct Action
