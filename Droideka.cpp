@@ -18,7 +18,9 @@ void Droideka::initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, i
   pinMode(longitudinal_mot_pin_2, OUTPUT);
   pinMode(longitudinal_mot_pin_pwm, OUTPUT);
 
-  rec.start(rec_rx, rec_tx, rec_state);
+  rec.setHardwareSerial(&Serial3);
+  rec.setSoftwareSerial(rec_rx, rec_tx);
+  rec.start(rec_state);
 }
 
 bool Droideka::receive_data()
@@ -27,11 +29,11 @@ bool Droideka::receive_data()
   {
     if (rec.receivedDataFromController()) // if new data has been collected
     {
-      throttle_x = rec.throttle_x;
-      throttle_y = rec.throttle_y;
-      button1 = rec.but1;
-      button2 = rec.but2;
-      button3 = rec.but3;
+      throttle_x = rec.bt_throttle_x;
+      throttle_y = rec.bt_throttle_y;
+      button1 = rec.bt_but1;
+      button2 = rec.bt_but2;
+      button3 = rec.bt_but3;
       return true;
     }
   }
@@ -76,47 +78,47 @@ bool Droideka::leftward()
 
 bool Droideka::button1_pushed()
 {
-  return rec.but1Pushed();
+  return rec.bt_but1Pushed();
 }
 
 bool Droideka::button1_clicked()
 {
-  return rec.but1Clicked();
+  return rec.bt_but1Clicked();
 }
 
 bool Droideka::button1_released()
 {
-  return rec.but1Released();
+  return rec.bt_but1Released();
 }
 
 bool Droideka::button2_pushed()
 {
-  return rec.but2Pushed();
+  return rec.bt_but2Pushed();
 }
 
 bool Droideka::button2_clicked()
 {
-  return rec.but2Clicked();
+  return rec.bt_but2Clicked();
 }
 
 bool Droideka::button2_released()
 {
-  return rec.but2Released();
+  return rec.bt_but2Released();
 }
 
 bool Droideka::button3_pushed()
 {
-  return rec.but3Pushed();
+  return rec.bt_but3Pushed();
 }
 
 bool Droideka::button3_clicked()
 {
-  return rec.but3Clicked();
+  return rec.bt_but3Clicked();
 }
 
 bool Droideka::button3_released()
 {
-  return rec.but3Released();
+  return rec.bt_but3Released();
 }
 
 ErrorCode Droideka::roll(int speed = 0)
@@ -242,7 +244,8 @@ float Droideka::encoder_to_deg(int motor_id, int encoder_angle)
 
 ErrorCode Droideka::move(int throttle)
 {
-  if (get_mode() == WALKING)
+  DroidekaMode mode = get_mode();
+  if (mode == WALKING)
   {
     /* TODO : find out what variable to change with the throttle : the easy one is the speed of the moves, the harder one is the
      *        the easy one is the speed of the moves
@@ -251,7 +254,7 @@ ErrorCode Droideka::move(int throttle)
 
     walk(throttle_x, throttle_y);
   }
-  else if (get_mode() == ROLLING)
+  else if (mode == ROLLING)
   {
     roll(throttle);
   }

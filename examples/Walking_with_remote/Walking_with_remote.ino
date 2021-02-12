@@ -29,17 +29,6 @@ void setup()
     Serial2.begin(DEBUG_BOARD_BAUD_RATE);
     droid_1 = new Droideka(&Serial2, &Serial1);
     droid_1->initialize(LMP1, LMP2, LMP_PWM, REC_RX, REC_TX, REC_STATE);
-
-    Serial.println("Start");
-
-    State *lastState = droid_1->read_debug_board_positions();
-    print_("Timestamp: " + String(lastState->timestamp), true);
-    for (int ii = 0; ii < MOTOR_NB; ii++)
-    {
-        print_("Motor n" + String(ii) + " : " + String(lastState->positions[ii]) + "\t\t updated:" + String(lastState->is_position_updated[ii]), true);
-    }
-
-    Serial.println("Start");
 }
 
 void loop()
@@ -59,6 +48,6 @@ void loop()
             droid_1->change_mode();
         }
         Serial.println();
-        // droid_1->move(droid_1->throttle_x);
     }
+    // droid_1->move(droid_1->throttle_x);
 }

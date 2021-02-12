@@ -13,7 +13,7 @@ private:
     unsigned long interval = 100; // Not currently used.
 
     // Create a Bluetooth Receiver
-    Receiver rec;
+    Receiver rec = new Receiver(HWORSW);
 
     // Create two ServoBus instances, one for each debug board.
     ServoBus *servoBus_front;                                                                                // Communication with the debug board wired to the front two legs

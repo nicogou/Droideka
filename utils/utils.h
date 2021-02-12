@@ -6,7 +6,7 @@
 #define HIP_LENGTH 7
 #define BODY_LENGTH 26.1 // TODO: verifier la valeur
 #define BODY_WIDTH 18.0  // TODO: verifier la valeur
-#define TIME_SAMPLE 10
+#define TIME_SAMPLE 3
 #define MAX_LONGITUDINAL_COG_MOVE BODY_LENGTH / 10
 #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
 #define MAX_ANGLE_COG_MOVE 1
@@ -23,6 +23,8 @@
 
 #define SERVO_BUS_WRITE_PIN_FRONT 13
 #define SERVO_BUS_WRITE_PIN_BACK 13
+
+#define HWORSW true
 
 enum DroidekaMode
 {
