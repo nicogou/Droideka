@@ -6,7 +6,7 @@
 #define HIP_LENGTH 7
 #define BODY_LENGTH 26.1 // TODO: verifier la valeur
 #define BODY_WIDTH 18.0  // TODO: verifier la valeur
-#define TIME_SAMPLE 3
+#define TIME_SAMPLE 1
 #define MAX_LONGITUDINAL_COG_MOVE BODY_LENGTH / 10
 #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
 #define MAX_ANGLE_COG_MOVE 1
@@ -239,6 +239,24 @@ struct Movement
             valid_movement *= positions[ii].valid_position; //If one of the positions in the movement is not valid, then the movement is invalid.
         }
         start_walk_time = micros();
+
+        for (int ii = 0; ii < TIME_SAMPLE; ii++)
+        {
+            Serial.println(ii);
+            for (int jj = 0; jj < LEG_NB; jj++)
+            {
+                for (int kk = 0; kk < 3; kk++)
+                {
+                    Serial.print(positions[ii].legs[jj][kk]);
+                    Serial.print("\t");
+                }
+                Serial.println();
+            }
+            Serial.print("Valid : ");
+            Serial.println(positions[ii].valid_position);
+            Serial.println();
+            Serial.println();
+        }
     }
 
     ErrorCode establish_cog_movement(int throttle_longitudinal, int throttle_lateral)
@@ -248,7 +266,7 @@ struct Movement
         {
             for (int ii = 0; ii < TIME_SAMPLE; ii++)
             {
-                tx[ii] = MAX_LONGITUDINAL_COG_MOVE * ii / TIME_SAMPLE;
+                tx[ii] = 2 * sqrt(2) * (ii + 1) / TIME_SAMPLE; //MAX_LONGITUDINAL_COG_MOVE * ii / TIME_SAMPLE;
                 ty[ii] = 0;
                 alpha[ii] = 0;
             }
@@ -702,7 +720,6 @@ struct Movement
 
         float temp[LEG_NB][2];           // x and y final coordinates of each feet
         float temp_final_pos[LEG_NB][3]; // used to build the Droideka_Position object by calculating rho, theta and z thanks to x and y stored in temp.
-
         for (int ii = 0; ii < LEG_NB; ii++)
         {
             if (one_leg != -1)
@@ -710,8 +727,9 @@ struct Movement
                 ii = one_leg;
             }
 
-            temp[ii][0] = shoulder_pos[ii][0] * (cos(angle[time_elapsed]) - 1) + shoulder_pos[ii][1] * sin(angle[time_elapsed]) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * cos(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - angle[time_elapsed]);
-            temp[ii][1] = shoulder_pos[ii][1] * (cos(angle[time_elapsed]) - 1) + shoulder_pos[ii][0] * sin(angle[time_elapsed]) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * sin(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][1] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - angle[time_elapsed]);
+            temp[ii][0] = shoulder_pos[ii][0] * (cos(PI * angle[time_elapsed] / 180) - 1) + shoulder_pos[ii][1] * sin(PI * angle[time_elapsed] / 180) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * cos(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - PI * angle[time_elapsed] / 180);
+            temp[ii][1] = shoulder_pos[ii][1] * (cos(PI * angle[time_elapsed] / 180) - 1) + shoulder_pos[ii][0] * sin(PI * angle[time_elapsed] / 180) + shoulder_mult[ii][0] * sqrt((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) * (start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) + (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed]) * (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) * sin(shoulder_mult[ii][0] * shoulder_mult[ii][1] * atan((start_pos.legs[ii][1] * cos(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][0] * trans_x[time_elapsed]) / (start_pos.legs[ii][1] * sin(3.141592 * start_pos.legs[ii][0] / 180) - shoulder_mult[ii][1] * trans_y[time_elapsed])) - PI * angle[time_elapsed] / 180);
+
             temp_final_pos[ii][2] = start_pos.legs[ii][2];
             temp_final_pos[ii][1] = sqrt(temp[ii][0] * temp[ii][0] + temp[ii][1] * temp[ii][1]);
             if (temp_final_pos[ii][1] == 0) // Si x et y sont nuls
@@ -724,7 +742,7 @@ struct Movement
             }
             else
             {
-                temp_final_pos[ii][0] = atan(temp[ii][1] / temp[ii][0]); // Dans le cas général, tan(theta) = y/x.
+                temp_final_pos[ii][0] = shoulder_mult[ii][0] * shoulder_mult[ii][1] * 180 * atan(temp[ii][1] / temp[ii][0]) / PI; // Dans le cas général, tan(theta) = y/x.
             }
 
             if (one_leg != -1)
@@ -738,7 +756,7 @@ struct Movement
 
     Droideka_Position get_final_position(Droideka_Position start_pos)
     {
-        return get_future_position(start_pos, tx, ty, alpha, TIME_SAMPLE);
+        return get_future_position(start_pos, tx, ty, alpha, TIME_SAMPLE - 1);
     }
 
     Droideka_Position get_lifted_position(int leg, Droideka_Position start_pos, Droideka_Position end_pos, unsigned long time_)
@@ -750,7 +768,7 @@ struct Movement
         unsigned long time_from_lifting = time_ - debut_time;
 
         Droideka_Position debut_pos(get_future_position(start_pos, tx, ty, alpha, debut_time, leg).legs);
-        Droideka_Position fin_pos(get_future_position(end_pos, reverse_tx, reverse_ty, reverse_alpha, TIME_SAMPLE - fin_time, leg).legs);
+        Droideka_Position fin_pos(get_future_position(end_pos, reverse_tx, reverse_ty, reverse_alpha, TIME_SAMPLE - 1 - fin_time, leg).legs);
 
         // Between the lifting and putting back of the leg, theta and X are linear, wheras Y follows a quadratic curve (arbitrarily defined)
 
@@ -773,8 +791,8 @@ struct Movement
 
         for (int ii = 0; ii < TIME_SAMPLE; ii++)
         {
-            Droideka_Position temp_current_pos = get_future_position(start_position, tx, ty, alpha, ii);                                    // Calculates the position of the legs before the leg is lifted.
-            Droideka_Position temp_future_pos = get_future_position(end_position, reverse_tx, reverse_ty, reverse_alpha, TIME_SAMPLE - ii); // Calculates the position of the legs after the leg has been lifted and put back on the ground.
+            Droideka_Position temp_current_pos = get_future_position(start_position, tx, ty, alpha, ii);                                        // Calculates the position of the legs before the leg is lifted.
+            Droideka_Position temp_future_pos = get_future_position(end_position, reverse_tx, reverse_ty, reverse_alpha, TIME_SAMPLE - 1 - ii); // Calculates the position of the legs after the leg has been lifted and put back on the ground.
 
             for (int jj = 0; jj < LEG_NB; jj++)
             {

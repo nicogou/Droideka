@@ -385,7 +385,22 @@ ErrorCode Droideka::walk(int throttle_x, int throttle_y, unsigned long time = 80
   // Step 1 : Compute the leg moves over the whole movement.
   if (walk_compute_state == 0)
   {
-    current_position = get_current_position();                     // Gets position of each motor at the start of the movement
+    current_position = get_current_position(); // Gets position of each motor at the start of the movement
+    Serial.println("Current Position");
+    for (int jj = 0; jj < LEG_NB; jj++)
+    {
+      for (int kk = 0; kk < 3; kk++)
+      {
+        Serial.print(current_position.legs[jj][kk]);
+        Serial.print("\t");
+      }
+      Serial.println();
+    }
+    Serial.print("Valid : ");
+    Serial.println(current_position.valid_position);
+    Serial.println();
+    Serial.println();
+
     movement = Movement(current_position, throttle_x, throttle_y); // Computes the movement of the CoG and the movement of the legs.
     if (movement.valid_movement)
     {
