@@ -22,7 +22,6 @@
 #define Y_PARKING 9.0
 
 #define SERVO_BUS_WRITE_PIN_FRONT 13
-#define SERVO_BUS_WRITE_PIN_BACK 13
 
 #define HWORSW true
 

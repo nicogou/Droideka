@@ -1,11 +1,9 @@
 #include "Droideka.h"
 
-Droideka::Droideka(Stream *debugBoardStream_front, Stream *debugBoardStream_back)
+Droideka::Droideka(Stream *debugBoardStream_front)
 {
   servoBus_front = new ServoBus(debugBoardStream_front, servo_bus_write_pin_front);
-  servoBus_back = new ServoBus(debugBoardStream_back, servo_bus_write_pin_back);
   servoBus_front->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
-  servoBus_back->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
 }
 
 void Droideka::initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state)
@@ -182,24 +180,21 @@ State *Droideka::read_debug_board_positions()
   for (uint8_t i = 0; i < MOTOR_NB; i++)
   {
     this->servoBus_front->requestPosition(this->motor_ids[i]);
-    this->servoBus_back->requestPosition(this->motor_ids[i]);
   }
   return &lastState_;
 }
 
 void Droideka::act(Action *action)
 {
-  for (uint8_t i = 0; i < MOTOR_NB / 2; i++)
+  for (uint8_t i = 0; i < MOTOR_NB; i++)
   {
     if (action->commands[i][2] > 0)
     {
       this->servoBus_front->MoveTime(this->motor_ids[i], action->commands[i][0], action->commands[i][1]);
-      this->servoBus_back->MoveTime(this->motor_ids[i + 6], action->commands[i + 6][0], action->commands[i + 6][1]);
     }
     else
     {
       this->servoBus_front->SetUnload(this->motor_ids[i]);
-      this->servoBus_back->SetUnload(this->motor_ids[i + 6]);
     }
   }
 }
@@ -364,6 +359,8 @@ ErrorCode Droideka::park(int time = 1000)
   delay(time);
 
   result = move_into_position(parked, time);
+  delay(time);
+
   return result;
 }
 
@@ -375,6 +372,8 @@ ErrorCode Droideka::unpark(int time = 1000)
 
   Droideka_Position unparked_(unparked);
   result = move_into_position(unparked_, time);
+  delay(time);
+
   return result;
 }
 

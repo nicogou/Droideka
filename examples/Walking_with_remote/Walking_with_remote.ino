@@ -25,12 +25,12 @@ int time_offset = 2000;
 void setup()
 {
     Serial.begin(9600);
-    Serial1.begin(DEBUG_BOARD_BAUD_RATE);
     Serial2.begin(DEBUG_BOARD_BAUD_RATE);
-    droid_1 = new Droideka(&Serial2, &Serial1);
+    droid_1 = new Droideka(&Serial2);
     droid_1->initialize(LMP1, LMP2, LMP_PWM, REC_RX, REC_TX, REC_STATE);
 
     Serial.println("Start");
+
     // Serial.println(droid_1->walk(10, 0));
     Serial.println("End");
 }
