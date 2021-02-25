@@ -359,6 +359,8 @@ ErrorCode Droideka::park(int time = 1000)
   delay(time);
 
   result = move_into_position(parked, time);
+  delay(time);
+
   return result;
 }
 
@@ -370,6 +372,8 @@ ErrorCode Droideka::unpark(int time = 1000)
 
   Droideka_Position unparked_(unparked);
   result = move_into_position(unparked_, time);
+  delay(time);
+
   return result;
 }
 
