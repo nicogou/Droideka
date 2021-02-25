@@ -17,9 +17,7 @@ private:
 
     // Create two ServoBus instances, one for each debug board.
     ServoBus *servoBus_front;                                                                                // Communication with the debug board wired to the front two legs
-    ServoBus *servoBus_back;                                                                                 // Communication with the debug board wired to the rear two legs
     int servo_bus_write_pin_front = SERVO_BUS_WRITE_PIN_FRONT;                                               // used by ServoBus lib. I assume it has the same function than Rx and Tx LEDs on the Arduino. Nothing currently wired to the pin.
-    int servo_bus_write_pin_back = SERVO_BUS_WRITE_PIN_BACK;                                                 // used by ServoBus lib. I assume it has the same function than Rx and Tx LEDs on the Arduino. Nothing currently wired to the pin.
     static void receive_debug_board_position(uint8_t id, uint8_t command, uint16_t param1, uint16_t param2); // ServoBus Event set to this function. Should work but not tested, and not currently used.
 
     float hip_length = HIP_LENGTH;                         //L2 -> length from knee to horizontal axis of the hip.
@@ -53,7 +51,7 @@ private:
     int longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
 
 public:
-    Droideka(Stream *debugBoardStream_front, Stream *debugBoardStream_back);                         // Class constructor.
+    Droideka(Stream *debugBoardStream_front);                                                        // Class constructor.
     void initialize(int l_m_p_1, int l_m_p_2, int l_m_p_pwm, int rec_rx, int rec_tx, int rec_state); // Class initializer. Sets up motors and Receiver depending on the setup.
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
 
