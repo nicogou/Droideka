@@ -37,90 +37,92 @@ typedef enum ErrorCode ErrorCode;
 struct State
 {
     unsigned long timestamp;
-    int positions[MOTOR_NB];
+    int32_t positions[MOTOR_NB];
     bool is_position_updated[MOTOR_NB];
     bool correct_motor_reading = false;
 };
 
 struct Action
 {
-    int commands[MOTOR_NB][3]; // [position, span, activate]
+    int32_t angle[MOTOR_NB]; // [position, span, activate]
+    uint16_t span[MOTOR_NB];
+    bool activate[MOTOR_NB];
     void set_time(int time)
     {
         for (int ii = 0; ii < MOTOR_NB; ii++)
         {
-            commands[ii][1] = time;
+            span[ii] = time;
         }
     }
-    void set_active(bool activate = true)
+    void set_active(bool active = true)
     {
         for (int ii = 0; ii < MOTOR_NB; ii++)
         {
-            if (activate)
+            if (active)
             {
-                commands[ii][2] = 1;
+                activate[ii] = 1;
             }
             else
             {
-                commands[ii][2] = 0;
+                activate[ii] = 0;
             }
         }
     }
 
-    void shoulders_active(bool activate = true)
+    void shoulders_active(bool active = true)
     {
         for (int ii = 0; ii < LEG_NB; ii++)
         {
-            if (activate)
+            if (active)
             {
-                commands[3 * ii][2] = 1;
+                activate[3 * ii] = 1;
             }
             else
             {
-                commands[3 * ii][2] = 0;
+                activate[3 * ii] = 0;
             }
         }
     }
 
-    void hips_active(bool activate = true)
+    void hips_active(bool active = true)
     {
         for (int ii = 0; ii < LEG_NB; ii++)
         {
-            if (activate)
+            if (active)
             {
-                commands[3 * ii + 1][2] = 1;
+                activate[3 * ii + 1] = 1;
             }
             else
             {
-                commands[3 * ii + 1][2] = 0;
+                activate[3 * ii + 1] = 0;
             }
         }
     }
 
-    void knees_active(bool activate = true)
+    void knees_active(bool active = true)
     {
         for (int ii = 0; ii < LEG_NB; ii++)
         {
-            if (activate)
+            if (active)
             {
-                commands[3 * ii + 2][2] = 1;
+                activate[3 * ii + 2] = 1;
             }
             else
             {
-                commands[3 * ii + 2][2] = 0;
+                activate[3 * ii + 2] = 0;
             }
         }
     }
 
-    void motor_active(int id, bool activate)
+    void motor_active(int id, bool active)
     {
-        if (activate)
+        if (active)
         {
-            commands[id][2] = 1;
+            activate[id] = 1;
         }
         else
         {
-            commands[id][2] = 0;
+            activate[id] = 0;
         }
     }
 };

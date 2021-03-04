@@ -1,21 +1,27 @@
 #include "Droideka.h"
 
-Droideka::Droideka(Stream *debugBoardStream, int rx, int tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
+Droideka::Droideka(HardwareSerial *serial_servos, int tXpin_servos, int rx, int tx, int16_t thresh[NB_MAX_DATA], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
 {
-  initialize(debugBoardStream, l_m_p_1, l_m_p_2, l_m_p_pwm);
-  droideka_rec = new Universal_Receiver(rx, tx, thresh, btHardware);
+  initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_2, l_m_p_pwm);
+  droideka_rec = new Universal_Receiver(rx, tx, btHardware);
 }
 
-Droideka::Droideka(Stream *debugBoardStream, HardwareSerial *stream, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
+Droideka::Droideka(HardwareSerial *serial_servos, int tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
 {
-  initialize(debugBoardStream, l_m_p_1, l_m_p_2, l_m_p_pwm);
-  droideka_rec = new Universal_Receiver(stream, thresh, btHardware);
+  initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_2, l_m_p_pwm);
+  droideka_rec = new Universal_Receiver(serial_receiver, btHardware);
 }
 
-void Droideka::initialize(Stream *debugBoardStream, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
+void Droideka::initialize(HardwareSerial *serial_servos, int tXpin_servos, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
 {
-  servoBus = new ServoBus(debugBoardStream, servo_bus_write_pin);
-  servoBus->setEventHandler(REPLY_POSITION, this->receive_debug_board_position);
+  servoBus.begin(serial_servos, tXpin_servos);
+  servoBus.debug(false);
+  servoBus.retry = 0;
+
+  for (int ii = 0; ii < MOTOR_NB; ii++)
+  {
+    servos[ii] = new LX16AServo(&servoBus, ii);
+  }
 
   longitudinal_mot_pin_1 = l_m_p_1;
   longitudinal_mot_pin_2 = l_m_p_2;
@@ -127,44 +133,36 @@ bool Droideka::receive_data()
 //   return NO_ERROR;
 // }
 
-State lastState_;
-unsigned long timestampLastHandledMessage_ = 0;
-
-void Droideka::receive_debug_board_position(uint8_t id, uint8_t command, uint16_t param1, uint16_t param2)
+State Droideka::read_servos_positions()
 {
-  (void)command;
-  (void)param2;
-  lastState_.positions[id] = param1;
-  lastState_.is_position_updated[id] = true;
-  //Check for incoherences in motor readings.
-  if (param1 <= 10 || 1030 < param1)
+  lastServoState.timestamp = millis();
+  for (int ii = 0; ii < MOTOR_NB; ii++)
   {
-    lastState_.correct_motor_reading = false;
+    lastServoState.positions[ii] = servos[ii]->pos_read();
+    lastServoState.is_position_updated[ii] = true;
   }
-  // TODO find index of array according to id, now we suppose the index and id are the same
-}
 
-State *Droideka::read_debug_board_positions()
-{
-  memset(lastState_.is_position_updated, 0, sizeof(bool) * MOTOR_NB);
-  for (uint8_t i = 0; i < MOTOR_NB; i++)
-  {
-    this->servoBus->requestPosition(this->motor_ids[i]);
-  }
-  return &lastState_;
+  // // A mettre à jour
+  lastServoState.correct_motor_reading = true;
+  // // if (lastState_.positions[ii] <= 10 || 1030 < lastState_.positions[ii])
+  // // {
+  // //   lastState_.correct_motor_reading = false;
+  // // }
+
+  return lastServoState;
 }
 
 void Droideka::act(Action *action)
 {
-  for (uint8_t i = 0; i < MOTOR_NB; i++)
+  for (int ii = 0; ii < MOTOR_NB; ii++)
   {
-    if (action->commands[i][2] > 0)
+    if (action->activate[ii] > 0)
     {
-      this->servoBus->MoveTime(this->motor_ids[i], action->commands[i][0], action->commands[i][1]);
+      servos[ii]->move_time(action->angle[ii], action->span[ii]);
     }
     else
     {
-      this->servoBus->SetUnload(this->motor_ids[i]);
+      servos[ii]->disable();
     }
   }
 }
@@ -196,18 +194,18 @@ ErrorCode Droideka::encode_leg_angles(int leg_id)
   return NO_ERROR;
 }
 
-int Droideka::deg_to_encoder(int motor_id, float deg_angle)
+int32_t Droideka::deg_to_encoder(int motor_id, float deg_angle)
 {
-  int encoder_angle;
-  encoder_angle = extreme_values_motor[motor_id][1] + extreme_values_motor[motor_id][3] * (int)(deg_angle / servo_deg_ratio);
+  int32_t encoder_angle;
+  encoder_angle = extreme_values_motor[motor_id][1] + extreme_values_motor[motor_id][3] * (int32_t)(deg_angle / servo_deg_ratio);
 
   return encoder_angle;
 }
 
-float Droideka::encoder_to_deg(int motor_id, int encoder_angle)
+float Droideka::encoder_to_deg(int motor_id, int32_t encoder_angle)
 {
   float deg_angle;
-  deg_angle = (encoder_angle - extreme_values_motor[motor_id][1]) * servo_deg_ratio / extreme_values_motor[motor_id][3];
+  deg_angle = (float)(encoder_angle - extreme_values_motor[motor_id][1]) * servo_deg_ratio / (float)extreme_values_motor[motor_id][3];
 
   return deg_angle;
 }
@@ -301,9 +299,9 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
         return error;
       }
 
-      pos_act.commands[3 * ii + 0][0] = motors_angle_encoder[ii][0];
-      pos_act.commands[3 * ii + 1][0] = motors_angle_encoder[ii][1];
-      pos_act.commands[3 * ii + 2][0] = motors_angle_encoder[ii][2];
+      pos_act.angle[3 * ii + 0] = motors_angle_encoder[ii][0];
+      pos_act.angle[3 * ii + 1] = motors_angle_encoder[ii][1];
+      pos_act.angle[3 * ii + 2] = motors_angle_encoder[ii][2];
     }
     pos_act.set_time(time);
 
@@ -324,53 +322,61 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
   return result;
 }
 
-// ErrorCode Droideka::park(int time = 1000)
-// {
-//   current_position = get_current_position();
-//   for (int ii = 0; ii < LEG_NB; ii++)
-//   {
-//     current_position.legs[ii][2] = Y_NOT_TOUCHING;
-//   }
+ErrorCode Droideka::park(int time = 1000)
+{
+  current_position = get_current_position();
+  for (int ii = 0; ii < LEG_NB; ii++)
+  {
+    current_position.legs[ii][2] = Y_NOT_TOUCHING;
+  }
 
-//   ErrorCode result = move_into_position(current_position, time);
-//   delay(time);
+  ErrorCode result = move_into_position(current_position, time);
+  if (result != NO_ERROR)
+  {
+    return result;
+  }
+  delay(time);
 
-//   result = move_into_position(parked, time);
-//   delay(time);
+  result = move_into_position(parked, time);
+  delay(time);
 
-//   return result;
-// }
+  return result;
+}
 
-// ErrorCode Droideka::unpark(int time = 1000)
-// {
-//   Droideka_Position unparking_(unparking);
-//   ErrorCode result = move_into_position(unparking_, time);
-//   delay(time);
+ErrorCode Droideka::unpark(int time = 1000)
+{
+  Droideka_Position unparking_(unparking);
+  ErrorCode result = move_into_position(unparking_, time);
+  if (result != NO_ERROR)
+  {
+    return result;
+  }
+  delay(time);
 
-//   Droideka_Position unparked_(unparked);
-//   result = move_into_position(unparked_, time);
-//   delay(time);
+  Droideka_Position unparked_(unparked);
+  result = move_into_position(unparked_, time);
+  delay(time);
 
-//   return result;
-// }
+  return result;
+}
 
 Droideka_Position Droideka::get_current_position()
 {
   // Il faut récupérer le lastState_ des servos, transformer cela en radians, puis degrés, puis en Droideka_Position.
   // State *lastState = read_debug_board_positions();
-  State *lastState;
-  lastState = read_debug_board_positions();
+  State lastState;
+  lastState = read_servos_positions();
   // int ii_t = 0;  // Permet de compter le nombre d'itérations nécessaires à une bonne lecture de la position des moteurs.
-  while (lastState->correct_motor_reading == false)
+  while (lastState.correct_motor_reading == false)
   {
     // ii_t++;
-    lastState = read_debug_board_positions();
+    lastState = read_servos_positions();
     bool temp = 1;
     for (int ii = 0; ii < MOTOR_NB; ii++)
     {
-      temp *= lastState->is_position_updated[ii];
+      temp *= lastState.is_position_updated[ii];
     }
-    lastState->correct_motor_reading = temp;
+    lastState.correct_motor_reading = temp;
   }
   // Serial.print("Nb de boucles: ");
   // Serial.println(ii_t);
@@ -382,7 +388,7 @@ Droideka_Position Droideka::get_current_position()
   {
     for (int jj = 0; jj < 3; jj++)
     {
-      motors_angle_encoder[ii][jj] = lastState->positions[3 * ii + jj];
+      motors_angle_encoder[ii][jj] = lastState.positions[3 * ii + jj];
       motors_angle_deg[ii][jj] = encoder_to_deg(3 * ii + jj, motors_angle_encoder[ii][jj]);
       motors_angle_rad[ii][jj] = motors_angle_deg[ii][jj] * 3.141592 / 180;
     }

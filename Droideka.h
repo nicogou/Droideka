@@ -2,7 +2,7 @@
 #define Droideka_h
 
 #include <Universal_Receiver.h>
-#include <ServoBus.h>
+#include <lx16a-servo.h>
 #include "utils/constants.h"
 #include "utils/structs.h"
 #include <Droideka_Position.h>
@@ -18,21 +18,20 @@ private:
     Universal_Receiver *droideka_rec;
 
     // Create a ServoBus instance for the debug Board
-    ServoBus *servoBus;
-    int servo_bus_write_pin = SERVO_BUS_WRITE_PIN;                                                           // used by ServoBus lib. I assume it has the same function than Rx and Tx LEDs on the Arduino. Nothing currently wired to the pin.
-    static void receive_debug_board_position(uint8_t id, uint8_t command, uint16_t param1, uint16_t param2); // ServoBus Event set to this function. Should work but not tested, and not currently used.
+    LX16ABus servoBus;
+    LX16AServo *servos[MOTOR_NB];
 
-    float hip_length = HIP_LENGTH;                         //L2 -> length from knee to horizontal axis of the hip.
-    float tibia_length = TIBIA_LENGTH;                     //L1 -> length from tip of the leg to knee.
-    float servo_deg_ratio = SERVO_DEG_RATIO;               // Multiplier to go from servo encoder to degrees value.
-    int deg_to_encoder(int motor_id, float deg_angle);     // Calculates the value to feed the motor from an angle value in degrees to encoder counts
-    float encoder_to_deg(int motor_id, int encoder_angle); // Calculates the angle value in degrees from an angle value in encoder counts
-    ErrorCode encode_leg_angles(int leg_id);               // Encodes each motor angle from degrees to encoder counts.
+    float hip_length = HIP_LENGTH;                             //L2 -> length from knee to horizontal axis of the hip.
+    float tibia_length = TIBIA_LENGTH;                         //L1 -> length from tip of the leg to knee.
+    float servo_deg_ratio = SERVO_DEG_RATIO;                   // Multiplier to go from servo encoder to degrees value.
+    int32_t deg_to_encoder(int motor_id, float deg_angle);     // Calculates the value to feed the motor from an angle value in degrees to encoder counts
+    float encoder_to_deg(int motor_id, int32_t encoder_angle); // Calculates the angle value in degrees from an angle value in encoder counts
+    ErrorCode encode_leg_angles(int leg_id);                   // Encodes each motor angle from degrees to encoder counts.
 
     // Variables to store the wanted motor angles in degrees, radians, and encoder counts.
-    float motors_angle_deg[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};   // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in degrees.
-    float motors_angle_rad[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};   // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in radians.
-    int motors_angle_encoder[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in encoder counts.
+    float motors_angle_deg[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};       // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in degrees.
+    float motors_angle_rad[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};       // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in radians.
+    int32_t motors_angle_encoder[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in encoder counts.
 
     // float shoulder_angle_deg[LEG_NB] = {0, 0, 0, 0};
     // float knee_angle_deg[LEG_NB] = {0, 0, 0, 0}; //phi 1
@@ -57,15 +56,15 @@ private:
     int longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
 
 public:
-    Droideka(Stream *debugBoardStream, int rx, int tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);         // Class constructor.
-    Droideka(Stream *debugBoardStream, HardwareSerial *stream, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm); // Class constructor.
-    void initialize(Stream *debugBoardStream, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);                                                                      // Class initializer. Sets up motors.
+    Droideka(HardwareSerial *serial_servos, int tXpin_servos, int rx, int tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);                  // Class constructor.
+    Droideka(HardwareSerial *serial_servos, int tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm); // Class constructor.
+    void initialize(HardwareSerial *serial_servos, int tXpin_servos, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);                                                                               // Class initializer. Sets up motors.
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
 
     // REMOTE CONTROL AND RECEIVER-RELATED FUNCTIONS
     bool receive_data(); // Receives data from receiver.
-    State *read_debug_board_positions();
-    // IDEA: actually use the previous function to check the position of the robot at startup, or if we reached the wanted position.
+    State lastServoState;
+    State read_servos_positions();
 
     int throttle_x = 0;
     int throttle_y = 0;
@@ -105,8 +104,8 @@ public:
     int offset_time_last_action;   // Time between end of the previous action and the new one.
 
     ErrorCode move_into_position(Droideka_Position pos, int time = 0);
-    // ErrorCode park(int time = 1000);                                              // Parking routine
-    // ErrorCode unpark(int time = 1000);                                            // Unparking routine
+    ErrorCode park(int time = 1000);   // Parking routine
+    ErrorCode unpark(int time = 1000); // Unparking routine
     // ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
     Droideka_Position get_current_position();
     int walk_compute_state = 0;
@@ -131,19 +130,34 @@ public:
 
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
     // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).
-    const int extreme_values_motor[MOTOR_NB][4] = {
-        {105, 480, 855, 1},
-        {395, 500, 950, -1},
-        {0, 500, 1000, -1},
-        {125, 500, 875, -1},
-        {50, 500, 605, 1},
-        {0, 500, 1000, 1},
-        {135, 510, 885, -1},
-        {50, 500, 605, 1},
-        {0, 500, 1000, 1},
-        {135, 510, 885, 1},
-        {395, 500, 950, -1},
-        {0, 500, 1000, -1},
+    // const int extreme_values_motor[MOTOR_NB][4] = {
+    //     {105, 480, 855, 1},
+    //     {395, 500, 950, -1},
+    //     {0, 500, 1000, -1},
+    //     {125, 500, 875, -1},
+    //     {50, 500, 605, 1},
+    //     {0, 500, 1000, 1},
+    //     {135, 510, 885, -1},
+    //     {50, 500, 605, 1},
+    //     {0, 500, 1000, 1},
+    //     {135, 510, 885, 1},
+    //     {395, 500, 950, -1},
+    //     {0, 500, 1000, -1},
+    // };
+
+    const int32_t extreme_values_motor[MOTOR_NB][4] = {
+        {2520, 11520, 20520, 1},
+        {9480, 12000, 22800, -1},
+        {0, 12000, 22800, -1},
+        {3000, 12000, 21000, -1},
+        {1200, 12000, 14520, 1},
+        {0, 12000, 24000, 1},
+        {3240, 12240, 21240, -1},
+        {1200, 12000, 14520, 1},
+        {0, 12000, 24000, 1},
+        {3240, 12240, 21240, 1},
+        {9480, 12000, 22800, -1},
+        {0, 12000, 24000, -1},
     };
 };
 

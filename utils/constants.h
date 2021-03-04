@@ -1,7 +1,7 @@
 #define DEBUG_BOARD_BAUD_RATE 115200
 
 #define MOTOR_NB 12
-#define SERVO_DEG_RATIO 0.24
+#define SERVO_DEG_RATIO 0.01
 #define LEG_NB 4
 #define TIBIA_LENGTH 7
 #define HIP_LENGTH 7
@@ -14,9 +14,9 @@
 
 #define Y_TOUCHING -11.0
 #define Y_NOT_TOUCHING -6.0
-#define Y_ZERO -7.0     // A vérifier
-#define THETA_IDLE 45.0 // A vérifier
-#define X_IDLE 4.0      // A vérifier
+#define Y_ZERO -7.0          // A vérifier
+#define THETA_IDLE 45.0      // A vérifier
+#define X_IDLE 4.0 * sqrt(2) // A vérifier
 
 #define THETA_PARKING 90.0
 #define X_PARKING 9.8
