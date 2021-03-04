@@ -16,7 +16,11 @@
 #define Y_NOT_TOUCHING -6.0
 #define Y_ZERO -7.0    // A vérifier
 #define THETA_IDLE 0.0 //45.0      // A vérifier
-#define X_IDLE 5.0     // A vérifier
+#define X_IDLE 6.0     // A vérifier
+
+#define Y_MAINTENANCE 0.0     // Maintenance
+#define THETA_MAINTENANCE 0.0 // Maintenance
+#define X_MAINTENANCE 14.0    // Maintenance
 
 #define THETA_PARKING 90.0
 #define X_PARKING 9.8

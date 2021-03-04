@@ -353,6 +353,15 @@ ErrorCode Droideka::unpark(int time = 1000)
   return result;
 }
 
+ErrorCode Droideka::go_to_maintenance()
+{
+  Droideka_Position maintenance_(maintenance_pos);
+  ErrorCode result = move_into_position(maintenance_, 2000);
+  delay(2000);
+
+  return result;
+}
+
 Droideka_Position Droideka::get_current_position()
 {
   // Il faut récupérer le lastState_ des servos, transformer cela en radians, puis degrés, puis en Droideka_Position.

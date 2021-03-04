@@ -50,4 +50,9 @@ void loop()
     {
         droid_1->change_mode();
     }
+
+    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(5))
+    {
+        droid_1->go_to_maintenance();
+    }
 }
