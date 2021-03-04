@@ -40,7 +40,7 @@ bool Droideka::receive_data()
     {
       if (droideka_rec->isUpdated.bluetooth()) // If we received new bluetooth data.
       {
-        Serial.print("\t\tBluetooth Inputs: ");
+        Serial.print("Bluetooth Inputs: ");
         for (int ii = 0; ii < droideka_rec->rxdata.digitalNb; ii++)
         {
           Serial.print(ii + 1);
