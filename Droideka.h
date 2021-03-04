@@ -79,7 +79,7 @@ public:
     // GENERAL MOVEMENT OF THE ROBOT
     // ErrorCode move(int throttle); // Responds to remote control commands depending on the mode.
     DroidekaMode get_mode(); // Checks in what mode the robot currently is.
-    // ErrorCode change_mode();      // Goes from walking to rolling mode and vice-versa.
+    ErrorCode change_mode(); // Goes from walking to rolling mode and vice-versa.
 
     // ROLLING MODE
     // ErrorCode roll(int speed = 0); // Longitudinal movement of the robot.
