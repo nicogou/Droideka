@@ -44,9 +44,9 @@ struct State
 
 struct Action
 {
-    int32_t angle[MOTOR_NB]; // [position, span, activate]
-    uint16_t span[MOTOR_NB];
-    bool activate[MOTOR_NB];
+    int32_t angle[MOTOR_NB]; // Angle that the motor has to go to
+    uint16_t span[MOTOR_NB]; // Time that the motor has to complete the move
+    bool activate[MOTOR_NB]; // Disables the motor if we don't need it to move.
     void set_time(int time)
     {
         for (int ii = 0; ii < MOTOR_NB; ii++)

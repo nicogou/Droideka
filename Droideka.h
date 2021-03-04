@@ -10,7 +10,7 @@
 
 class Droideka
 {
-private:
+public:
     unsigned long last_millis;    // Not currently used.
     unsigned long interval = 100; // Not currently used.
 
@@ -33,16 +33,6 @@ private:
     float motors_angle_rad[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};       // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in radians.
     int32_t motors_angle_encoder[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in encoder counts.
 
-    // float shoulder_angle_deg[LEG_NB] = {0, 0, 0, 0};
-    // float knee_angle_deg[LEG_NB] = {0, 0, 0, 0}; //phi 1
-    // float hip_angle_deg[LEG_NB] = {0, 0, 0, 0};  //phi 2
-    // float shoulder_angle_rad[LEG_NB] = {0, 0, 0, 0};
-    // float knee_angle_rad[LEG_NB] = {0, 0, 0, 0}; //phi 1
-    // float hip_angle_rad[LEG_NB] = {0, 0, 0, 0};  //phi 2
-    // int shoulder_angle_encoder[LEG_NB] = {0, 0, 0, 0};
-    // int knee_angle_encoder[LEG_NB] = {0, 0, 0, 0}; //phi 1
-    // int hip_angle_encoder[LEG_NB] = {0, 0, 0, 0};  //phi 2
-
     // Motor ids for the Droideka legs
     unsigned int motor_ids[MOTOR_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
     // IDs 0, 1 and 2 represent the front left leg
@@ -55,7 +45,6 @@ private:
     int longitudinal_mot_pin_2;   // They can also be used to brake the motor.
     int longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
 
-public:
     Droideka(HardwareSerial *serial_servos, int tXpin_servos, int rx, int tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);                  // Class constructor.
     Droideka(HardwareSerial *serial_servos, int tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm); // Class constructor.
     void initialize(HardwareSerial *serial_servos, int tXpin_servos, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);                                                                               // Class initializer. Sets up motors.
@@ -130,21 +119,6 @@ public:
 
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
     // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).
-    // const int extreme_values_motor[MOTOR_NB][4] = {
-    //     {105, 480, 855, 1},
-    //     {395, 500, 950, -1},
-    //     {0, 500, 1000, -1},
-    //     {125, 500, 875, -1},
-    //     {50, 500, 605, 1},
-    //     {0, 500, 1000, 1},
-    //     {135, 510, 885, -1},
-    //     {50, 500, 605, 1},
-    //     {0, 500, 1000, 1},
-    //     {135, 510, 885, 1},
-    //     {395, 500, 950, -1},
-    //     {0, 500, 1000, -1},
-    // };
-
     const int32_t extreme_values_motor[MOTOR_NB][4] = {
         {2520, 11520, 20520, 1},
         {9480, 12000, 22800, -1},

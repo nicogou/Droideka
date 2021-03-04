@@ -142,12 +142,8 @@ State Droideka::read_servos_positions()
     lastServoState.is_position_updated[ii] = true;
   }
 
-  // // A mettre à jour
+  // A mettre à jour
   lastServoState.correct_motor_reading = true;
-  // // if (lastState_.positions[ii] <= 10 || 1030 < lastState_.positions[ii])
-  // // {
-  // //   lastState_.correct_motor_reading = false;
-  // // }
 
   return lastServoState;
 }
@@ -174,9 +170,6 @@ ErrorCode Droideka::encode_leg_angles(int leg_id)
   {
     motors_angle_encoder[leg_id][jj] = deg_to_encoder(3 * leg_id + jj, motors_angle_deg[leg_id][jj]);
   }
-  // motors_angle_encoder[leg_id][0] = deg_to_encoder(3 * leg_id + 0, motors_angle_deg[leg_id][0]);
-  // motors_angle_encoder[leg_id][1] = deg_to_encoder(3 * leg_id + 1, motors_angle_deg[leg_id][1]);
-  // motors_angle_encoder[leg_id][2] = deg_to_encoder(3 * leg_id + 2, motors_angle_deg[leg_id][2]);
 
   if (motors_angle_encoder[leg_id][0] < extreme_values_motor[3 * leg_id + 0][0] || motors_angle_encoder[leg_id][0] > extreme_values_motor[3 * leg_id + 0][2])
   {
@@ -363,13 +356,10 @@ ErrorCode Droideka::unpark(int time = 1000)
 Droideka_Position Droideka::get_current_position()
 {
   // Il faut récupérer le lastState_ des servos, transformer cela en radians, puis degrés, puis en Droideka_Position.
-  // State *lastState = read_debug_board_positions();
-  State lastState;
-  lastState = read_servos_positions();
-  // int ii_t = 0;  // Permet de compter le nombre d'itérations nécessaires à une bonne lecture de la position des moteurs.
+  State lastState = read_servos_positions();
+
   while (lastState.correct_motor_reading == false)
   {
-    // ii_t++;
     lastState = read_servos_positions();
     bool temp = 1;
     for (int ii = 0; ii < MOTOR_NB; ii++)
@@ -378,10 +368,7 @@ Droideka_Position Droideka::get_current_position()
     }
     lastState.correct_motor_reading = temp;
   }
-  // Serial.print("Nb de boucles: ");
-  // Serial.println(ii_t);
 
-  //int angle_deg[MOTOR_NB];
   float temp[LEG_NB][3];
 
   for (int ii = 0; ii < LEG_NB; ii++)
@@ -392,15 +379,6 @@ Droideka_Position Droideka::get_current_position()
       motors_angle_deg[ii][jj] = encoder_to_deg(3 * ii + jj, motors_angle_encoder[ii][jj]);
       motors_angle_rad[ii][jj] = motors_angle_deg[ii][jj] * 3.141592 / 180;
     }
-    // motors_angle_encoder[ii][0] = lastState->positions[3 * ii + 0];
-    // motors_angle_deg[ii][0] = encoder_to_deg(3 * ii + 0, motors_angle_encoder[ii][0]);
-    // motors_angle_rad[ii][0] = motors_angle_deg[ii][0] * 3.141592 / 180;
-    // motors_angle_encoder[ii][1] = lastState->positions[3 * ii + 1];
-    // motors_angle_deg[ii][1] = encoder_to_deg(3 * ii + 1, motors_angle_encoder[ii][1]);
-    // motors_angle_rad[ii][1] = motors_angle_deg[ii][1] * 3.141592 / 180;
-    // motors_angle_encoder[ii][2] = lastState->positions[3 * ii + 2];
-    // motors_angle_deg[ii][2] = encoder_to_deg(3 * ii + 2, motors_angle_encoder[ii][2]);
-    // motors_angle_rad[ii][2] = motors_angle_deg[ii][2] * 3.141592 / 180;
     temp[ii][0] = motors_angle_deg[ii][0];
     temp[ii][1] = HIP_LENGTH * cos(motors_angle_rad[ii][1]) + TIBIA_LENGTH * cos(motors_angle_rad[ii][1] + motors_angle_rad[ii][2]);
     temp[ii][2] = HIP_LENGTH * sin(motors_angle_rad[ii][1]) + TIBIA_LENGTH * sin(motors_angle_rad[ii][1] + motors_angle_rad[ii][2]);
