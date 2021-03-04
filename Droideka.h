@@ -4,8 +4,9 @@
 #include <Universal_Receiver.h>
 #include <lx16a-servo.h>
 #include "utils/constants.h"
-#include "utils/structs.h"
+//#include "utils/structs.h"
 #include <Droideka_Position.h>
+#include <Droideka_Movement.h>
 #include <math.h>
 
 class Droideka
@@ -99,7 +100,7 @@ public:
     Droideka_Position get_current_position();
     int walk_compute_state = 0;
     Droideka_Position current_position;
-    //Movement movement;
+    Droideka_Movement *movement;
 
     float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
