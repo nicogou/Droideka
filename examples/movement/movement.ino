@@ -30,7 +30,7 @@ void loop()
         Droideka_Position curr(droid_1->unparked);
         Serial.println("Current Position");
         curr.print_position();
-        droid_1->movement = Droideka_Movement(curr, 0, 0);
+        droid_1->movement = Droideka_Movement(curr, 0, 0, 0, 0, true);
         Droideka_Position temp;
         for (int ii = 0; ii < TIME_SAMPLE; ii++)
         {
