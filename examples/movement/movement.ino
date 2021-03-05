@@ -34,12 +34,12 @@ void loop()
         Droideka_Position curr = droid_1->get_current_position();
         Serial.println("Current Position");
         curr.print_position();
-        droid_1->movement = new Droideka_Movement(curr, 0, 0);
+        droid_1->movement = Droideka_Movement(curr, 0, 0);
         Droideka_Position temp;
         for (int ii = 0; ii < TIME_SAMPLE; ii++)
         {
             Serial.println("Position " + String(ii + 1));
-            temp = droid_1->movement->get_future_position(curr, droid_1->movement->tx, droid_1->movement->ty, droid_1->movement->alpha, ii);
+            temp = droid_1->movement.get_future_position(curr, droid_1->movement.tx, droid_1->movement.ty, droid_1->movement.alpha, ii);
             temp.print_position();
             droid_1->move_into_position(temp, time_ms / TIME_SAMPLE);
             delay(time_ms / TIME_SAMPLE);
