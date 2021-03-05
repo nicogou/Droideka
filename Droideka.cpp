@@ -133,6 +133,14 @@ bool Droideka::receive_data()
 //   return NO_ERROR;
 // }
 
+void Droideka::disable_enable_motors()
+{
+  for (int ii = 0; ii < MOTOR_NB; ii++)
+  {
+    servos[ii]->disable();
+  }
+}
+
 State Droideka::read_servos_positions()
 {
   lastServoState.timestamp = millis();

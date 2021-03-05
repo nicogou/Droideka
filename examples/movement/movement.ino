@@ -55,4 +55,9 @@ void loop()
     {
         droid_1->go_to_maintenance();
     }
+
+    if (droid_1->droideka_rec->digitalFalling(6))
+    {
+        droid_1->disable_enable_motors();
+    }
 }

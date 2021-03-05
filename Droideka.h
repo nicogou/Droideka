@@ -21,6 +21,7 @@ public:
     // Create a ServoBus instance for the debug Board
     LX16ABus servoBus;
     LX16AServo *servos[MOTOR_NB];
+    void disable_enable_motors();
 
     float hip_length = HIP_LENGTH;                             //L2 -> length from knee to horizontal axis of the hip.
     float tibia_length = TIBIA_LENGTH;                         //L1 -> length from tip of the leg to knee.
