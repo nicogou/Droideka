@@ -1,4 +1,3 @@
-
 #include <Droideka.h>
 #define LMP1 2
 #define LMP2 3
@@ -6,9 +5,6 @@
 
 Droideka *droid_1;
 
-int time = 2000;
-int time_offset = 2000;
-double last_millis = 0;
 int16_t thresholds[NB_MAX_DATA];
 int time_ms = 5000;
 
@@ -31,21 +27,37 @@ void loop()
     droid_1->receive_data();
     if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(0))
     {
-        Droideka_Position curr = droid_1->get_current_position();
+        Droideka_Position curr(droid_1->unparked);
         Serial.println("Current Position");
         curr.print_position();
         droid_1->movement = Droideka_Movement(curr, 0, 0);
         Droideka_Position temp;
         for (int ii = 0; ii < TIME_SAMPLE; ii++)
         {
-            Serial.println("Position " + String(ii + 1));
-            temp = droid_1->movement.get_future_position(curr, droid_1->movement.tx, droid_1->movement.ty, droid_1->movement.alpha, ii);
-            temp.print_position();
+            if (ii == TIME_SAMPLE - 1)
+            {
+                temp = Droideka_Position(droid_1->unparked);
+            }
+            else
+            {
+                temp = droid_1->movement.positions[ii];
+            }
             droid_1->move_into_position(temp, time_ms / TIME_SAMPLE);
             delay(time_ms / TIME_SAMPLE);
         }
     }
-
+    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(1))
+    {
+        Droideka_Position unparked_(droid_1->unparked);
+        droid_1->move_into_position(unparked_, 1000);
+        delay(1000);
+    }
+    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(2))
+    {
+        Droideka_Position unparking_(droid_1->unparking);
+        droid_1->move_into_position(unparking_, 1000);
+        delay(1000);
+    }
     if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(4))
     {
         droid_1->change_mode();
