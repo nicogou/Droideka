@@ -101,7 +101,7 @@ public:
     Droideka_Position get_current_position();
     int walk_compute_state = 0;
     Droideka_Position current_position;
-    Droideka_Movement *movement;
+    Droideka_Movement movement;
 
     float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
