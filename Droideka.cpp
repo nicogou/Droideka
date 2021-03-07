@@ -18,9 +18,36 @@ void Droideka::initialize(HardwareSerial *serial_servos, int tXpin_servos, int l
   servoBus.debug(false);
   servoBus.retry = 0;
 
+  uint32_t tmp = 0;
+  min_voltage = 9000;
   for (int ii = 0; ii < MOTOR_NB; ii++)
   {
     servos[ii] = new LX16AServo(&servoBus, ii);
+    servo_voltage[ii] = servos[ii]->vin();
+    tmp += servo_voltage[ii];
+    if (servo_voltage[ii] > max_voltage)
+    {
+      max_voltage = servo_voltage[ii];
+    }
+    if (servo_voltage[ii] < min_voltage)
+    {
+      min_voltage = servo_voltage[ii];
+    }
+  }
+  avg_voltage = tmp / MOTOR_NB;
+
+  if (min_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
+  {
+    for (int ii = 0; ii < MOTOR_NB; ii++)
+    {
+      disable_enable_motors();
+    }
+    ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
+    Serial.println("Servo voltage too low");
+    while (true)
+    {
+      delay(100);
+    }
   }
 
   longitudinal_mot_pin_1 = l_m_p_1;
