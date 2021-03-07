@@ -57,6 +57,8 @@ void Droideka::initialize(HardwareSerial *serial_servos, int tXpin_servos, int l
   pinMode(longitudinal_mot_pin_1, OUTPUT);
   pinMode(longitudinal_mot_pin_2, OUTPUT);
   pinMode(longitudinal_mot_pin_pwm, OUTPUT);
+
+  movement.finished = true;
 }
 
 bool Droideka::receive_data()
@@ -353,7 +355,7 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 
 ErrorCode Droideka::park(int time = 1000)
 {
-  Droideka_position curr = get_current_position();
+  Droideka_Position curr = get_current_position();
   for (int ii = 0; ii < LEG_NB; ii++)
   {
     curr.legs[ii][2] = Y_NOT_TOUCHING;
@@ -430,4 +432,42 @@ Droideka_Position Droideka::get_current_position()
   }
   Droideka_Position result(temp);
   return result;
+}
+
+ErrorCode Droideka::next_movement()
+{
+  if (movement.started == false && movement.finished == false)
+  {
+    movement.next_position = movement.get_future_position(movement.start_position, movement.tx[0], movement.ty[0], movement.tz[0], movement.alpha[0]);
+    movement.iter = 1;
+    movement.started = true;
+    movement.finished = false;
+    movement.start = micros();
+    move_into_position(movement.next_position, (movement.time_span / TIME_SAMPLE) / 1000);
+  }
+  if (movement.started == true && movement.finished == false)
+  {
+    unsigned long now = micros();
+    if (now - movement.start >= (movement.iter + 1) * movement.time_span / TIME_SAMPLE)
+    {
+      movement.iter = (micros() - movement.start) / (movement.time_span / TIME_SAMPLE) + 1;
+    }
+    if (now - movement.start < movement.iter * movement.time_span / TIME_SAMPLE && now - movement.start >= (movement.iter - 1) * movement.time_span / TIME_SAMPLE)
+    {
+      movement.next_position = movement.get_future_position(movement.start_position, movement.tx[movement.iter], movement.ty[movement.iter], movement.tz[movement.iter], movement.alpha[movement.iter]);
+    }
+    if (now - movement.start >= movement.iter * movement.time_span / TIME_SAMPLE && now - movement.start < (movement.iter + 1) * movement.time_span / TIME_SAMPLE)
+    {
+      move_into_position(movement.next_position, (movement.start + (movement.iter + 1) * movement.time_span / TIME_SAMPLE - now) / 1000);
+      movement.iter++;
+    }
+    if (now - movement.start < (movement.iter - 1) * movement.time_span / TIME_SAMPLE)
+    {
+      Serial.println("Je ne comprends pas pourquoi on est passés par là...");
+    }
+    if (movement.iter == TIME_SAMPLE) // The movement is finished
+    {
+      movement.finished = true;
+    }
+  }
 }
