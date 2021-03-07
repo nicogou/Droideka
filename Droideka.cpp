@@ -259,11 +259,11 @@ float Droideka::encoder_to_deg(int motor_id, int32_t encoder_angle)
 
 DroidekaMode Droideka::get_mode()
 {
-  Droideka_Position current_position = get_current_position();
+  Droideka_Position curr = get_current_position();
   bool test = 1;
   for (int ii = 0; ii < LEG_NB; ii++)
   {
-    test = test * (current_position.legs[ii][2] >= Y_NOT_TOUCHING);
+    test = test * (curr.legs[ii][2] >= Y_NOT_TOUCHING);
   }
   if (test)
   {
@@ -339,6 +339,7 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
 
 ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 {
+  current_position = pos;
   Action action;
   ErrorCode result = in_position(pos, action, time);
   if (result == NO_ERROR)
@@ -352,13 +353,13 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 
 ErrorCode Droideka::park(int time = 1000)
 {
-  current_position = get_current_position();
+  Droideka_position curr = get_current_position();
   for (int ii = 0; ii < LEG_NB; ii++)
   {
-    current_position.legs[ii][2] = Y_NOT_TOUCHING;
+    curr.legs[ii][2] = Y_NOT_TOUCHING;
   }
 
-  ErrorCode result = move_into_position(current_position, time);
+  ErrorCode result = move_into_position(curr, time);
   if (result != NO_ERROR)
   {
     return result;
