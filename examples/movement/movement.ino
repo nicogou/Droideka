@@ -40,9 +40,11 @@ void loop()
     if (droid_1->droideka_rec->digitalFalling(0))
     {
         Droideka_Position curr(droid_1->unparked);
-        Serial.println("Current Position");
-        curr.print_position();
-        droid_1->movement = Droideka_Movement(curr, trans_x, trans_y, trans_z, rot, time_ms);
+        droid_1->set_movement(Droideka_Movement(curr, trans_x, trans_y, trans_z, rot, time_ms));
+    }
+    if (droid_1->droideka_rec->digitalFalling(3))
+    {
+        droid_1->stop_movement();
     }
     if (droid_1->droideka_rec->digitalFalling(1))
     {

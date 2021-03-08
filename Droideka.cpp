@@ -434,11 +434,20 @@ Droideka_Position Droideka::get_current_position()
   return result;
 }
 
+ErrorCode Droideka::stop_movement()
+{
+  if (movement.started == true && movement.finished == false)
+  {
+    movement.finished = true;
+    return NO_ERROR;
+  }
+}
+
 ErrorCode Droideka::next_movement()
 {
   if (movement.started == false && movement.finished == false)
   {
-    movement.next_position = movement.get_future_position(movement.start_position, movement.tx[0], movement.ty[0], movement.tz[0], movement.alpha[0]);
+    movement.next_position = movement.get_future_position(movement.start_position, 0);
     movement.iter = 1;
     movement.started = true;
     movement.finished = false;
@@ -454,11 +463,18 @@ ErrorCode Droideka::next_movement()
     }
     if (now - movement.start < movement.iter * movement.time_span / TIME_SAMPLE && now - movement.start >= (movement.iter - 1) * movement.time_span / TIME_SAMPLE)
     {
-      movement.next_position = movement.get_future_position(movement.start_position, movement.tx[movement.iter], movement.ty[movement.iter], movement.tz[movement.iter], movement.alpha[movement.iter]);
+      movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
     }
     if (now - movement.start >= movement.iter * movement.time_span / TIME_SAMPLE && now - movement.start < (movement.iter + 1) * movement.time_span / TIME_SAMPLE)
     {
-      move_into_position(movement.next_position, (movement.start + (movement.iter + 1) * movement.time_span / TIME_SAMPLE - now) / 1000);
+
+      Serial.print(movement.next_position.legs[0][0]);
+      Serial.print("\t");
+      Serial.print(movement.next_position.legs[0][1]);
+      Serial.print("\t");
+      Serial.print(movement.next_position.legs[0][2]);
+      Serial.print("\t");
+      Serial.println(move_into_position(movement.next_position, (movement.start + (movement.iter + 1) * movement.time_span / TIME_SAMPLE - now) / 1000));
       movement.iter++;
     }
     if (now - movement.start < (movement.iter - 1) * movement.time_span / TIME_SAMPLE)
@@ -469,5 +485,18 @@ ErrorCode Droideka::next_movement()
     {
       movement.finished = true;
     }
+  }
+}
+
+ErrorCode Droideka::set_movement(Droideka_Movement mvmt)
+{
+  if (movement.started == false || movement.finished == true)
+  {
+    movement = mvmt;
+    return NO_ERROR;
+  }
+  else
+  {
+    return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
   }
 }

@@ -106,8 +106,10 @@ public:
     Droideka_Position get_current_position();
     int walk_compute_state = 0;
     Droideka_Position current_position;
-    Droideka_Movement movement;
+    ErrorCode set_movement(Droideka_Movement mvmt);
     ErrorCode next_movement();
+    ErrorCode stop_movement();
+    bool moving = false;
 
     float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
@@ -147,6 +149,9 @@ public:
         {9480, 12000, 22800, -1},
         {0, 12000, 24000, -1},
     };
+
+private:
+    Droideka_Movement movement;
 };
 
 #endif
