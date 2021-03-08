@@ -448,80 +448,54 @@ ErrorCode Droideka::next_movement()
   if (movement.started == false && movement.finished == false)
   {
     movement.next_position = movement.get_future_position(movement.start_position, 0);
-    movement.iter = 1;
+    movement.next_position.print_position("Position 0");
+    movement.start = micros();
+    move_into_position(movement.next_position, movement.time_iter[0] / 1000);
     movement.started = true;
     movement.finished = false;
-    move_into_position(movement.next_position, movement.time_iter[1] / 1000);
-    movement.start = micros();
-    Serial.print(movement.start);
-    Serial.print("\t\t");
-    Serial.println(micros());
+    movement.iter = 1;
   }
   if (movement.started == true && movement.finished == false)
   {
     unsigned long now = micros();
-    Serial.print(movement.iter);
-    Serial.print("\t\t");
-    Serial.print(now - movement.start);
-    Serial.print("\t\t");
-    Serial.print(movement.time_iter[movement.iter - 1]);
-    Serial.print("\t\t");
-    Serial.print(movement.time_iter[movement.iter]);
-    Serial.print("\t\t");
-    Serial.print(movement.time_iter[movement.iter + 1]);
-    Serial.print("\t\t");
-
-    if (now - movement.start >= movement.time_span)
+    if (now - movement.start >= movement.time_iter[movement.iter] && now - movement.start < movement.time_span)
     {
-      Serial.print("Temps max dépassé");
-      movement.finished = true;
-    }
-    else if (now - movement.start >= movement.time_iter[movement.iter + 1])
-    {
-      Serial.print("Here");
-      for (int ii = 0; ii < movement.nb_iter; ii++)
+      for (int ii = movement.iter + 1; ii < movement.nb_iter; ii++)
       {
-        if (now - movement.start >= movement.time_iter[ii] && now - movement.start < movement.time_iter[ii + 1])
+        if (now - movement.start >= movement.time_iter[ii - 1] && now - movement.start < movement.time_iter[ii])
         {
           movement.iter = ii;
           break;
         }
       }
     }
-    if (now - movement.start < movement.time_iter[movement.iter] && now - movement.start >= movement.time_iter[movement.iter - 1])
+    if (now - movement.start < movement.time_iter[movement.iter - 1])
     {
       if (movement.next_pos_calc == false)
       {
-        Serial.print("calculating next pos");
         movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
         movement.next_pos_calc = true;
       }
     }
-    else if (now - movement.start < movement.time_iter[movement.iter - 1])
-    {
-      Serial.println("Je ne comprends pas pourquoi on est passés par là...");
-    }
-    else if (now - movement.start >= movement.time_iter[movement.iter] && now - movement.start < movement.time_iter[movement.iter + 1])
+    if (now - movement.start >= movement.time_iter[movement.iter - 1] && now - movement.start < movement.time_iter[movement.iter])
     {
       if (movement.next_pos_calc == false)
       {
         movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
       }
-      Serial.print(movement.next_position.legs[0][0]);
-      Serial.print("\t");
-      Serial.print(movement.next_position.legs[0][1]);
-      Serial.print("\t");
-      Serial.print(movement.next_position.legs[0][2]);
-      Serial.print("\t");
-      Serial.print(move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter + 1] - now) / 1000));
+      move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter] - now) / 1000);
       movement.next_pos_calc = false;
       movement.iter++;
     }
-    if (movement.iter == TIME_SAMPLE) // The movement is finished
+    if (now - movement.start >= movement.time_span)
     {
+      movement.iter == movement.nb_iter;
+    }
+    if (movement.iter == movement.nb_iter) // The movement is finished
+    {
+      // move_into_position(movement.get_future_position(movement.start_position, movement.nb_iter - 1)), 0;
       movement.finished = true;
     }
-    Serial.println();
   }
 }
 
@@ -536,4 +510,9 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt)
   {
     return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
   }
+}
+
+ErrorCode Droideka::add_position(Droideka_Position pos, int which_leg, unsigned long time)
+{
+  movement.add_position(pos, which_leg, time);
 }

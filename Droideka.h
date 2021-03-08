@@ -109,6 +109,7 @@ public:
     ErrorCode set_movement(Droideka_Movement mvmt);
     ErrorCode next_movement();
     ErrorCode stop_movement();
+    ErrorCode add_position(Droideka_Position pos, int which_leg, unsigned long time);
     bool moving = false;
 
     float parked[LEG_NB][3] = {
