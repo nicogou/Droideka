@@ -6,13 +6,25 @@
 Droideka *droid_1;
 
 int16_t thresholds[NB_MAX_DATA];
-int time_ms = 5000;
+int time_ms = 1000;
+float trans_x[TIME_SAMPLE];
+float trans_y[TIME_SAMPLE];
+float trans_z[TIME_SAMPLE];
+float rot[TIME_SAMPLE];
 
 void setup()
 {
     for (int ii = 0; ii < NB_MAX_DATA; ii++)
     {
         thresholds[ii] = 4;
+    }
+
+    for (int ii = 0; ii < TIME_SAMPLE; ii++)
+    {
+        trans_x[ii] = 0;
+        trans_y[ii] = 2.0 * ((float)ii + 1.0) / (float)TIME_SAMPLE;
+        trans_z[ii] = 0;
+        rot[ii] = 0;
     }
 
     Serial.begin(9600);
@@ -25,45 +37,39 @@ void setup()
 void loop()
 {
     droid_1->receive_data();
-    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(0))
+    Droideka_Position upked(droid_1->unparked);
+
+    if (droid_1->droideka_rec->digitalFalling(0))
     {
-        Droideka_Position curr(droid_1->unparked);
-        Serial.println("Current Position");
-        curr.print_position();
-        droid_1->movement = Droideka_Movement(curr, 0, 0, 0, 0, true);
-        Droideka_Position temp;
-        for (int ii = 0; ii < TIME_SAMPLE; ii++)
-        {
-            if (ii == TIME_SAMPLE - 1)
-            {
-                temp = Droideka_Position(droid_1->unparked);
-            }
-            else
-            {
-                temp = droid_1->movement.positions[ii];
-            }
-            droid_1->move_into_position(temp, time_ms / TIME_SAMPLE);
-            delay(time_ms / TIME_SAMPLE);
-        }
+        droid_1->set_movement(Droideka_Movement(upked, trans_x, trans_y, trans_z, rot, time_ms));
     }
-    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(1))
+    if (droid_1->droideka_rec->digitalFalling(10))
+    {
+        Droideka_Position upking(droid_1->unparking);
+        Droideka_Position pked(droid_1->parked);
+        droid_1->set_movement(Droideka_Movement(upking, 0, time_ms));
+        droid_1->add_position(pked, 0, 1000);
+    }
+    if (droid_1->droideka_rec->digitalFalling(3))
+    {
+        droid_1->stop_movement();
+    }
+    if (droid_1->droideka_rec->digitalFalling(1))
     {
         Droideka_Position unparked_(droid_1->unparked);
-        droid_1->move_into_position(unparked_, 1000);
-        delay(1000);
+        droid_1->set_movement(Droideka_Movement(unparked_, 0, time_ms));
     }
-    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(2))
+    if (droid_1->droideka_rec->digitalFalling(2))
     {
         Droideka_Position unparking_(droid_1->unparking);
-        droid_1->move_into_position(unparking_, 1000);
-        delay(1000);
+        droid_1->set_movement(Droideka_Movement(unparking_, 0, time_ms));
     }
-    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(4))
+    if (droid_1->droideka_rec->digitalFalling(4))
     {
         droid_1->change_mode();
     }
 
-    if (droid_1->droideka_rec->isUpdated.bluetooth() && droid_1->droideka_rec->digitalFalling(9))
+    if (droid_1->droideka_rec->digitalFalling(9))
     {
         droid_1->go_to_maintenance();
     }
@@ -72,4 +78,5 @@ void loop()
     {
         droid_1->disable_enable_motors();
     }
+    droid_1->next_movement();
 }
