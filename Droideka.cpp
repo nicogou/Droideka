@@ -451,40 +451,77 @@ ErrorCode Droideka::next_movement()
     movement.iter = 1;
     movement.started = true;
     movement.finished = false;
+    move_into_position(movement.next_position, movement.time_iter[1] / 1000);
     movement.start = micros();
-    move_into_position(movement.next_position, (movement.time_span / TIME_SAMPLE) / 1000);
+    Serial.print(movement.start);
+    Serial.print("\t\t");
+    Serial.println(micros());
   }
   if (movement.started == true && movement.finished == false)
   {
     unsigned long now = micros();
-    if (now - movement.start >= (movement.iter + 1) * movement.time_span / TIME_SAMPLE)
-    {
-      movement.iter = (micros() - movement.start) / (movement.time_span / TIME_SAMPLE) + 1;
-    }
-    if (now - movement.start < movement.iter * movement.time_span / TIME_SAMPLE && now - movement.start >= (movement.iter - 1) * movement.time_span / TIME_SAMPLE)
-    {
-      movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
-    }
-    if (now - movement.start >= movement.iter * movement.time_span / TIME_SAMPLE && now - movement.start < (movement.iter + 1) * movement.time_span / TIME_SAMPLE)
-    {
+    Serial.print(movement.iter);
+    Serial.print("\t\t");
+    Serial.print(now - movement.start);
+    Serial.print("\t\t");
+    Serial.print(movement.time_iter[movement.iter - 1]);
+    Serial.print("\t\t");
+    Serial.print(movement.time_iter[movement.iter]);
+    Serial.print("\t\t");
+    Serial.print(movement.time_iter[movement.iter + 1]);
+    Serial.print("\t\t");
 
+    if (now - movement.start >= movement.time_span)
+    {
+      Serial.print("Temps max dépassé");
+      movement.finished = true;
+    }
+    else if (now - movement.start >= movement.time_iter[movement.iter + 1])
+    {
+      Serial.print("Here");
+      for (int ii = 0; ii < movement.nb_iter; ii++)
+      {
+        if (now - movement.start >= movement.time_iter[ii] && now - movement.start < movement.time_iter[ii + 1])
+        {
+          movement.iter = ii;
+          break;
+        }
+      }
+    }
+    if (now - movement.start < movement.time_iter[movement.iter] && now - movement.start >= movement.time_iter[movement.iter - 1])
+    {
+      if (movement.next_pos_calc == false)
+      {
+        Serial.print("calculating next pos");
+        movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
+        movement.next_pos_calc = true;
+      }
+    }
+    else if (now - movement.start < movement.time_iter[movement.iter - 1])
+    {
+      Serial.println("Je ne comprends pas pourquoi on est passés par là...");
+    }
+    else if (now - movement.start >= movement.time_iter[movement.iter] && now - movement.start < movement.time_iter[movement.iter + 1])
+    {
+      if (movement.next_pos_calc == false)
+      {
+        movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
+      }
       Serial.print(movement.next_position.legs[0][0]);
       Serial.print("\t");
       Serial.print(movement.next_position.legs[0][1]);
       Serial.print("\t");
       Serial.print(movement.next_position.legs[0][2]);
       Serial.print("\t");
-      Serial.println(move_into_position(movement.next_position, (movement.start + (movement.iter + 1) * movement.time_span / TIME_SAMPLE - now) / 1000));
+      Serial.print(move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter + 1] - now) / 1000));
+      movement.next_pos_calc = false;
       movement.iter++;
-    }
-    if (now - movement.start < (movement.iter - 1) * movement.time_span / TIME_SAMPLE)
-    {
-      Serial.println("Je ne comprends pas pourquoi on est passés par là...");
     }
     if (movement.iter == TIME_SAMPLE) // The movement is finished
     {
       movement.finished = true;
     }
+    Serial.println();
   }
 }
 
