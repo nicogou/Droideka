@@ -47,7 +47,7 @@ void loop()
     {
         Droideka_Position upking(droid_1->unparking);
         Droideka_Position pked(droid_1->parked);
-        droid_1->set_movement(Droideka_Movement(upked, upking, 0, time_ms));
+        droid_1->set_movement(Droideka_Movement(upking, 0, time_ms));
         droid_1->add_position(pked, 0, 1000);
     }
     if (droid_1->droideka_rec->digitalFalling(3))
@@ -57,14 +57,12 @@ void loop()
     if (droid_1->droideka_rec->digitalFalling(1))
     {
         Droideka_Position unparked_(droid_1->unparked);
-        droid_1->move_into_position(unparked_, 1000);
-        delay(1000);
+        droid_1->set_movement(Droideka_Movement(unparked_, 0, time_ms));
     }
     if (droid_1->droideka_rec->digitalFalling(2))
     {
         Droideka_Position unparking_(droid_1->unparking);
-        droid_1->move_into_position(unparking_, 1000);
-        delay(1000);
+        droid_1->set_movement(Droideka_Movement(unparking_, 0, time_ms));
     }
     if (droid_1->droideka_rec->digitalFalling(4))
     {

@@ -355,40 +355,49 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 
 ErrorCode Droideka::park(int time = 1000)
 {
+  float temp[LEG_NB][3];
   Droideka_Position curr = get_current_position();
   for (int ii = 0; ii < LEG_NB; ii++)
   {
-    curr.legs[ii][2] = Y_NOT_TOUCHING;
+    temp[ii][0] = curr.legs[ii][0];
+    temp[ii][1] = curr.legs[ii][1];
+    temp[ii][2] = Y_NOT_TOUCHING;
   }
 
-  ErrorCode result = move_into_position(curr, time);
-  if (result != NO_ERROR)
+  Droideka_Position temp_pos(temp);
+  if (!temp_pos.valid_position)
   {
-    return result;
+    return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
   }
-  delay(time);
 
-  result = move_into_position(parked, time);
-  delay(time);
+  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(temp), 0, time));
+  if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
+  {
+    return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+  }
+  result = add_position(Droideka_Position(parked), 0, time);
+  if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+  {
+    return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  }
 
-  return result;
+  return NO_ERROR;
 }
 
 ErrorCode Droideka::unpark(int time = 1000)
 {
-  Droideka_Position unparking_(unparking);
-  ErrorCode result = move_into_position(unparking_, time);
-  if (result != NO_ERROR)
+  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(unparking), 0, time));
+  if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
-    return result;
+    return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
   }
-  delay(time);
+  result = add_position(Droideka_Position(unparked), 0, time);
+  if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+  {
+    return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  }
 
-  Droideka_Position unparked_(unparked);
-  result = move_into_position(unparked_, time);
-  delay(time);
-
-  return result;
+  return NO_ERROR;
 }
 
 ErrorCode Droideka::go_to_maintenance()
@@ -448,7 +457,6 @@ ErrorCode Droideka::next_movement()
   if (movement.started == false && movement.finished == false)
   {
     movement.next_position = movement.get_future_position(movement.start_position, 0);
-    movement.next_position.print_position("Position 0");
     movement.start = micros();
     move_into_position(movement.next_position, movement.time_iter[0] / 1000);
     movement.started = true;
@@ -514,5 +522,13 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt)
 
 ErrorCode Droideka::add_position(Droideka_Position pos, int which_leg, unsigned long time)
 {
-  movement.add_position(pos, which_leg, time);
+  if (movement.started == false || movement.finished == true)
+  {
+    movement.add_position(pos, which_leg, time);
+    return NO_ERROR;
+  }
+  else
+  {
+    return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  }
 }
