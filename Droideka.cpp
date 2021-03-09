@@ -18,11 +18,33 @@ void Droideka::initialize(HardwareSerial *serial_servos, int tXpin_servos, int l
   servoBus.debug(false);
   servoBus.retry = 0;
 
+  for (int ii = 0; ii < MOTOR_NB; ii++)
+  {
+    servos[ii] = new LX16AServo(&servoBus, ii);
+  }
+
+  while (check_voltage() == SERVOS_VOLTAGE_TOO_LOW)
+  {
+    delay(1000);
+  }
+
+  longitudinal_mot_pin_1 = l_m_p_1;
+  longitudinal_mot_pin_2 = l_m_p_2;
+  longitudinal_mot_pin_pwm = l_m_p_pwm;
+
+  pinMode(longitudinal_mot_pin_1, OUTPUT);
+  pinMode(longitudinal_mot_pin_2, OUTPUT);
+  pinMode(longitudinal_mot_pin_pwm, OUTPUT);
+
+  movement.finished = true;
+}
+
+ErrorCode Droideka::check_voltage()
+{
   uint32_t tmp = 0;
   min_voltage = 9000;
   for (int ii = 0; ii < MOTOR_NB; ii++)
   {
-    servos[ii] = new LX16AServo(&servoBus, ii);
     servo_voltage[ii] = servos[ii]->vin();
     tmp += servo_voltage[ii];
     if (servo_voltage[ii] > max_voltage)
@@ -44,21 +66,12 @@ void Droideka::initialize(HardwareSerial *serial_servos, int tXpin_servos, int l
     }
     ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
     Serial.println("Servo voltage too low");
-    while (true)
-    {
-      delay(100);
-    }
+    return result;
   }
-
-  longitudinal_mot_pin_1 = l_m_p_1;
-  longitudinal_mot_pin_2 = l_m_p_2;
-  longitudinal_mot_pin_pwm = l_m_p_pwm;
-
-  pinMode(longitudinal_mot_pin_1, OUTPUT);
-  pinMode(longitudinal_mot_pin_2, OUTPUT);
-  pinMode(longitudinal_mot_pin_pwm, OUTPUT);
-
-  movement.finished = true;
+  else
+  {
+    return NO_ERROR;
+  }
 }
 
 bool Droideka::receive_data()
