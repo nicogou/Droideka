@@ -106,11 +106,10 @@ public:
     // ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
     Droideka_Position get_current_position();
     int walk_compute_state = 0;
-    Droideka_Position current_position;
     ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);
     ErrorCode next_movement();
     ErrorCode stop_movement();
-    ErrorCode add_position(Droideka_Position pos, unsigned long time);
+    ErrorCode add_position(Droideka_Position pos, unsigned long time, int one_leg = -1);
     bool moving = false;
 
     float parked[LEG_NB][3] = {
@@ -134,6 +133,8 @@ public:
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE}};
+
+    Droideka_Position current_position = Droideka_Position(parked);
 
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
     // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).

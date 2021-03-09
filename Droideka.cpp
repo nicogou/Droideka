@@ -383,7 +383,7 @@ ErrorCode Droideka::park(int time = 1000)
     return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
   }
 
-  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(temp), time));
+  ErrorCode result = set_movement(Droideka_Movement(current_position, Droideka_Position(temp), time));
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
     return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
@@ -399,7 +399,7 @@ ErrorCode Droideka::park(int time = 1000)
 
 ErrorCode Droideka::unpark(int time = 1000)
 {
-  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(unparking), time));
+  ErrorCode result = set_movement(Droideka_Movement(current_position, Droideka_Position(unparking), time));
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
     return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
@@ -416,7 +416,7 @@ ErrorCode Droideka::unpark(int time = 1000)
 ErrorCode Droideka::go_to_maintenance()
 {
   Droideka_Position maintenance_(maintenance_pos);
-  ErrorCode result = set_movement(Droideka_Movement(maintenance_, 2000));
+  ErrorCode result = set_movement(Droideka_Movement(current_position, maintenance_, 2000));
 
   return result;
 }
@@ -536,11 +536,11 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
   }
 }
 
-ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time)
+ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time, int one_leg = -1)
 {
   if (movement.started == false || movement.finished == true)
   {
-    movement.add_position(pos, time);
+    movement.add_position(current_position, pos, time, one_leg);
     return NO_ERROR;
   }
   else
