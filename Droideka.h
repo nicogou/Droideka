@@ -24,9 +24,9 @@ public:
     uint16_t max_voltage = 0;         // Holds the maximum input voltage of the servos in millivolts.
     uint16_t servo_voltage[MOTOR_NB]; // Holds the input voltage of the servos in millivolts.
 
-    float hip_length = HIP_LENGTH;                             //L2 -> length from knee to horizontal axis of the hip.
-    float tibia_length = TIBIA_LENGTH;                         //L1 -> length from tip of the leg to knee.
-    float servo_deg_ratio = SERVO_DEG_RATIO;                   // Multiplier to go from servo encoder to degrees value.
+    const float hip_length = HIP_LENGTH;                       //L2 -> length from knee to horizontal axis of the hip.
+    const float tibia_length = TIBIA_LENGTH;                   //L1 -> length from tip of the leg to knee.
+    const float servo_deg_ratio = SERVO_DEG_RATIO;             // Multiplier to go from servo encoder to degrees value.
     int32_t deg_to_encoder(int motor_id, float deg_angle);     // Calculates the value to feed the motor from an angle value in degrees to encoder counts
     float encoder_to_deg(int motor_id, int32_t encoder_angle); // Calculates the angle value in degrees from an angle value in encoder counts
     ErrorCode encode_leg_angles(int leg_id);                   // Encodes each motor angle from degrees to encoder counts.
@@ -37,7 +37,7 @@ public:
     int32_t motors_angle_encoder[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in encoder counts.
 
     // Motor ids for the Droideka legs
-    unsigned int motor_ids[MOTOR_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    const unsigned int motor_ids[MOTOR_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
     // IDs 0, 1 and 2 represent the front left leg
     // IDs 3, 4 and 5 represent the front right leg
     // IDs 6, 7 and 8 represent the rear left leg
