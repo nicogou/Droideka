@@ -478,6 +478,11 @@ ErrorCode Droideka::next_movement()
   if (movement.started == true && movement.finished == false)
   {
     unsigned long now = micros();
+    if (now - movement.start >= movement.time_span)
+    {
+      movement.finished = true;
+      return NO_ERROR;
+    }
     if (now - movement.start >= movement.time_iter[movement.iter] && now - movement.start < movement.time_span)
     {
       for (int ii = movement.iter + 1; ii < movement.nb_iter; ii++)
@@ -506,15 +511,6 @@ ErrorCode Droideka::next_movement()
       move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter] - now) / 1000);
       movement.next_pos_calc = false;
       movement.iter++;
-    }
-    if (now - movement.start >= movement.time_span)
-    {
-      movement.iter == movement.nb_iter;
-    }
-    if (movement.iter == movement.nb_iter) // The movement is finished
-    {
-      // move_into_position(movement.get_future_position(movement.start_position, movement.nb_iter - 1)), 0;
-      movement.finished = true;
     }
   }
 }
