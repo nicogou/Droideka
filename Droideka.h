@@ -12,9 +12,6 @@
 class Droideka
 {
 public:
-    unsigned long last_millis;    // Not currently used.
-    unsigned long interval = 100; // Not currently used.
-
     // Create a Bluetooth Receiver
     Universal_Receiver *droideka_rec;
 
@@ -62,27 +59,6 @@ public:
     State lastServoState;
     State read_servos_positions();
 
-    int throttle_x = 0;
-    int throttle_y = 0;
-    int button1 = 1;
-    int button2 = 1;
-    int button3 = 1;
-    // IDEA : create a structure similar to the one in Receiver.h to hold the values of throttle_x, throttle_y, button1, button2 and button3.
-    // bool forward();   // TRUE if joystick is inclined forward, otherwise FALSE. This should probably be integrated in the Receiver class.
-    // bool backward();  // TRUE if joystick is inclined backward, otherwise FALSE. This should probably be integrated in the Receiver class.
-    // bool leftward();  // TRUE if joystick is inclined on the left, otherwise FALSE. This should probably be integrated in the Receiver class.
-    // bool rightward(); // TRUE if joystick is inclined on the right, otherwise FALSE. This should probably be integrated in the Receiver class.
-    // bool button1_pushed();   // TRUE if button 1 is pressed, otherwise FALSE.
-    // bool button1_clicked();  // TRUE when button 1 goes from unpressed to pressed, otherwise FALSE.
-    // bool button1_released(); // TRUE when button 1 goes from pressed to unpressed, otherwise FALSE.
-    // bool button2_pushed();   // TRUE if button 2 is pressed, otherwise FALSE.
-    // bool button2_clicked();  // TRUE when button 2 goes from unpressed to pressed, otherwise FALSE.
-    // bool button2_released(); // TRUE when button 2 goes from pressed to unpressed, otherwise FALSE.
-    // bool button3_pushed();   // TRUE if button 3 is pressed, otherwise FALSE.
-    // bool button3_clicked();  // TRUE when button 3 goes from unpressed to pressed, otherwise FALSE.
-    // bool button3_released(); // TRUE when button 3 goes from pressed to unpressed, otherwise FALSE.
-    // IDEA : create a class or something to hold all remote control-related functions. Or make the Receiver public so we don't have to re-declare public functions ?
-
     // GENERAL MOVEMENT OF THE ROBOT
     // ErrorCode move(int throttle); // Responds to remote control commands depending on the mode.
     DroidekaMode get_mode(); // Checks in what mode the robot currently is.
@@ -95,40 +71,34 @@ public:
     ErrorCode in_position(Droideka_Position pos, Action &pos_act, int time); // Checks if the wanted position is reachable given the mechanical constraints of the robot.
     void act(Action *action);                                                // Make the motors actually move.
 
-    double last_action_millis = 0; // Time when the previous action was started
-    int time_last_action;          // Time the previous action needs to be undertaken in
-    int offset_time_last_action;   // Time between end of the previous action and the new one.
-
     ErrorCode move_into_position(Droideka_Position pos, int time = 0);
     ErrorCode park(int time = 1000);   // Parking routine
     ErrorCode unpark(int time = 1000); // Unparking routine
     ErrorCode go_to_maintenance();
     // ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
     Droideka_Position get_current_position();
-    int walk_compute_state = 0;
     ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);
     ErrorCode next_movement();
     ErrorCode stop_movement();
     ErrorCode add_position(Droideka_Position pos, unsigned long time, int one_leg = -1);
-    bool moving = false;
 
-    float parked[LEG_NB][3] = {
+    const float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING}};
-    float unparking[LEG_NB][3] = {
+    const float unparking[LEG_NB][3] = {
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING}};
-    float unparked[LEG_NB][3] = {
+    const float unparked[LEG_NB][3] = {
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING}};
 
-    float maintenance_pos[LEG_NB][3] = {
+    const float maintenance_pos[LEG_NB][3] = {
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
