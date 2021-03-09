@@ -370,12 +370,12 @@ ErrorCode Droideka::park(int time = 1000)
     return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
   }
 
-  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(temp), 0, time));
+  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(temp), time));
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
     return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
   }
-  result = add_position(Droideka_Position(parked), 0, time);
+  result = add_position(Droideka_Position(parked), time);
   if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
@@ -386,12 +386,12 @@ ErrorCode Droideka::park(int time = 1000)
 
 ErrorCode Droideka::unpark(int time = 1000)
 {
-  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(unparking), 0, time));
+  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(unparking), time));
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
     return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
   }
-  result = add_position(Droideka_Position(unparked), 0, time);
+  result = add_position(Droideka_Position(unparked), time);
   if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
@@ -403,7 +403,7 @@ ErrorCode Droideka::unpark(int time = 1000)
 ErrorCode Droideka::go_to_maintenance()
 {
   Droideka_Position maintenance_(maintenance_pos);
-  ErrorCode result = set_movement(Droideka_Movement(maintenance_, 0, 2000));
+  ErrorCode result = set_movement(Droideka_Movement(maintenance_, 2000));
 
   return result;
 }
@@ -519,11 +519,11 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt)
   }
 }
 
-ErrorCode Droideka::add_position(Droideka_Position pos, int which_leg, unsigned long time)
+ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time)
 {
   if (movement.started == false || movement.finished == true)
   {
-    movement.add_position(pos, which_leg, time);
+    movement.add_position(pos, time);
     return NO_ERROR;
   }
   else
