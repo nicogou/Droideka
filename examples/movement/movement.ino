@@ -43,14 +43,21 @@ void loop()
     {
         droid_1->set_movement(Droideka_Movement(upked, trans_x, trans_y, trans_z, rot, time_ms));
     }
+    if (droid_1->droideka_rec->digitalState(7))
+    {
+        droid_1->set_movement(Droideka_Movement(upked, droid_1->droideka_rec->analog[1], droid_1->droideka_rec->analog[0], droid_1->droideka_rec->analog[3], droid_1->droideka_rec->analog[2], 500, false), true);
+    }
+    if (droid_1->droideka_rec->digitalRising(7))
+    {
+        droid_1->set_movement(Droideka_Movement(upked, time_ms), true);
+    }
     if (droid_1->droideka_rec->digitalFalling(3))
     {
         droid_1->stop_movement();
     }
     if (droid_1->droideka_rec->digitalFalling(1))
     {
-        Droideka_Position unparked_(droid_1->unparked);
-        droid_1->set_movement(Droideka_Movement(unparked_, time_ms));
+        droid_1->set_movement(Droideka_Movement(upked, time_ms));
     }
     if (droid_1->droideka_rec->digitalFalling(2))
     {

@@ -107,7 +107,7 @@ public:
     Droideka_Position get_current_position();
     int walk_compute_state = 0;
     Droideka_Position current_position;
-    ErrorCode set_movement(Droideka_Movement mvmt);
+    ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);
     ErrorCode next_movement();
     ErrorCode stop_movement();
     ErrorCode add_position(Droideka_Position pos, unsigned long time);

@@ -519,16 +519,24 @@ ErrorCode Droideka::next_movement()
   }
 }
 
-ErrorCode Droideka::set_movement(Droideka_Movement mvmt)
+ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = false)
 {
-  if (movement.started == false || movement.finished == true)
+  if (overwriting)
   {
     movement = mvmt;
     return NO_ERROR;
   }
   else
   {
-    return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+    if (movement.started == false || movement.finished == true)
+    {
+      movement = mvmt;
+      return NO_ERROR;
+    }
+    else
+    {
+      return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+    }
   }
 }
 
