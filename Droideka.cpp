@@ -403,8 +403,7 @@ ErrorCode Droideka::unpark(int time = 1000)
 ErrorCode Droideka::go_to_maintenance()
 {
   Droideka_Position maintenance_(maintenance_pos);
-  ErrorCode result = move_into_position(maintenance_, 2000);
-  delay(2000);
+  ErrorCode result = set_movement(Droideka_Movement(maintenance_, 0, 2000));
 
   return result;
 }
