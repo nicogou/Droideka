@@ -24,12 +24,12 @@ public:
     uint16_t max_voltage = 0;         // Holds the maximum input voltage of the servos in millivolts.
     uint16_t servo_voltage[MOTOR_NB]; // Holds the input voltage of the servos in millivolts.
 
-    const float hip_length = HIP_LENGTH;                       //L2 -> length from knee to horizontal axis of the hip.
-    const float tibia_length = TIBIA_LENGTH;                   //L1 -> length from tip of the leg to knee.
-    const float servo_deg_ratio = SERVO_DEG_RATIO;             // Multiplier to go from servo encoder to degrees value.
-    int32_t deg_to_encoder(int motor_id, float deg_angle);     // Calculates the value to feed the motor from an angle value in degrees to encoder counts
-    float encoder_to_deg(int motor_id, int32_t encoder_angle); // Calculates the angle value in degrees from an angle value in encoder counts
-    ErrorCode encode_leg_angles(int leg_id);                   // Encodes each motor angle from degrees to encoder counts.
+    const float hip_length = HIP_LENGTH;                          //L2 -> length from knee to horizontal axis of the hip.
+    const float tibia_length = TIBIA_LENGTH;                      //L1 -> length from tip of the leg to knee.
+    const float servo_deg_ratio = SERVO_DEG_RATIO;                // Multiplier to go from servo encoder to degrees value.
+    int32_t deg_to_encoder(int8_t motor_id, float deg_angle);     // Calculates the value to feed the motor from an angle value in degrees to encoder counts
+    float encoder_to_deg(int8_t motor_id, int32_t encoder_angle); // Calculates the angle value in degrees from an angle value in encoder counts
+    ErrorCode encode_leg_angles(int8_t leg_id);                   // Encodes each motor angle from degrees to encoder counts.
 
     // Variables to store the wanted motor angles in degrees, radians, and encoder counts.
     float motors_angle_deg[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};       // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in degrees.
@@ -44,13 +44,13 @@ public:
     // IDs 9, 10 and 11 represent the rear right leg
 
     // Longitudinal Motor
-    int longitudinal_mot_pin_1;   // This pi and the following one are used to set the way the longitudinal motor spins.
-    int longitudinal_mot_pin_2;   // They can also be used to brake the motor.
-    int longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
+    int8_t longitudinal_mot_pin_1;   // This pi and the following one are used to set the way the longitudinal motor spins.
+    int8_t longitudinal_mot_pin_2;   // They can also be used to brake the motor.
+    int8_t longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
 
-    Droideka(HardwareSerial *serial_servos, int tXpin_servos, int rx, int tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);                  // Class constructor.
-    Droideka(HardwareSerial *serial_servos, int tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm); // Class constructor.
-    void initialize(HardwareSerial *serial_servos, int tXpin_servos, int l_m_p_1, int l_m_p_2, int l_m_p_pwm);                                                                               // Class initializer. Sets up motors.
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm);            // Class constructor.
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm); // Class constructor.
+    void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm);                                                                               // Class initializer. Sets up motors.
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
     ErrorCode check_voltage();
 
@@ -80,7 +80,7 @@ public:
     ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);
     ErrorCode next_movement();
     ErrorCode stop_movement();
-    ErrorCode add_position(Droideka_Position pos, unsigned long time, int one_leg = -1);
+    ErrorCode add_position(Droideka_Position pos, unsigned long time, int8_t one_leg = -1);
 
     const float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
