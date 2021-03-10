@@ -1,24 +1,24 @@
 #include "Droideka.h"
 
-Droideka::Droideka(HardwareSerial *serial_servos, int tXpin_servos, int rx, int tx, int16_t thresh[NB_MAX_DATA], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm)
 {
   initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_2, l_m_p_pwm);
   droideka_rec = new Universal_Receiver(rx, tx, btHardware);
 }
 
-Droideka::Droideka(HardwareSerial *serial_servos, int tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm)
 {
   initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_2, l_m_p_pwm);
   droideka_rec = new Universal_Receiver(serial_receiver, btHardware);
 }
 
-void Droideka::initialize(HardwareSerial *serial_servos, int tXpin_servos, int l_m_p_1, int l_m_p_2, int l_m_p_pwm)
+void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm)
 {
   servoBus.begin(serial_servos, tXpin_servos);
   servoBus.debug(false);
   servoBus.retry = 0;
 
-  for (int ii = 0; ii < MOTOR_NB; ii++)
+  for (int8_t ii = 0; ii < MOTOR_NB; ii++)
   {
     servos[ii] = new LX16AServo(&servoBus, ii);
   }
@@ -43,7 +43,7 @@ ErrorCode Droideka::check_voltage()
 {
   uint32_t tmp = 0;
   min_voltage = 9000;
-  for (int ii = 0; ii < MOTOR_NB; ii++)
+  for (int8_t ii = 0; ii < MOTOR_NB; ii++)
   {
     servo_voltage[ii] = servos[ii]->vin();
     tmp += servo_voltage[ii];
@@ -60,7 +60,7 @@ ErrorCode Droideka::check_voltage()
 
   if (min_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
   {
-    for (int ii = 0; ii < MOTOR_NB; ii++)
+    for (int8_t ii = 0; ii < MOTOR_NB; ii++)
     {
       disable_enable_motors();
     }
@@ -83,7 +83,7 @@ bool Droideka::receive_data()
       if (droideka_rec->isUpdated.bluetooth()) // If we received new bluetooth data.
       {
         Serial.print("Bluetooth Inputs: ");
-        for (int ii = 0; ii < droideka_rec->rxdata.digitalNb; ii++)
+        for (int8_t ii = 0; ii < droideka_rec->rxdata.digitalNb; ii++)
         {
           Serial.print(ii + 1);
           Serial.print(":");
@@ -92,7 +92,7 @@ bool Droideka::receive_data()
           Serial.print(droideka_rec->lastDigital[ii]);
           Serial.print("\t");
         }
-        for (int ii = 0; ii < droideka_rec->rxdata.analogNb; ii++)
+        for (int8_t ii = 0; ii < droideka_rec->rxdata.analogNb; ii++)
         {
           Serial.print(ii + 1);
           Serial.print(":");
@@ -105,7 +105,7 @@ bool Droideka::receive_data()
       if (droideka_rec->isUpdated.hardware()) // If we received new hardware data.
       {
         Serial.print("\t\tHardware Inputs: ");
-        for (int ii = 0; ii < droideka_rec->digitalNb_hw; ii++)
+        for (int8_t ii = 0; ii < droideka_rec->digitalNb_hw; ii++)
         {
           Serial.print(ii + 1);
           Serial.print(":");
@@ -114,7 +114,7 @@ bool Droideka::receive_data()
           Serial.print(droideka_rec->lastDigital[ii + NB_MAX_DATA]);
           Serial.print("\t");
         }
-        for (int ii = 0; ii < droideka_rec->analogNb_hw; ii++)
+        for (int8_t ii = 0; ii < droideka_rec->analogNb_hw; ii++)
         {
           Serial.print(ii + 1);
           Serial.print(":");
@@ -186,7 +186,7 @@ void Droideka::disable_enable_motors()
 State Droideka::read_servos_positions()
 {
   lastServoState.timestamp = millis();
-  for (int ii = 0; ii < MOTOR_NB; ii++)
+  for (int8_t ii = 0; ii < MOTOR_NB; ii++)
   {
     lastServoState.positions[ii] = servos[ii]->pos_read();
     lastServoState.is_position_updated[ii] = true;
@@ -200,7 +200,7 @@ State Droideka::read_servos_positions()
 
 void Droideka::act(Action *action)
 {
-  for (int ii = 0; ii < MOTOR_NB; ii++)
+  for (int8_t ii = 0; ii < MOTOR_NB; ii++)
   {
     if (action->activate[ii] > 0)
     {
@@ -213,10 +213,10 @@ void Droideka::act(Action *action)
   }
 }
 
-ErrorCode Droideka::encode_leg_angles(int leg_id)
+ErrorCode Droideka::encode_leg_angles(int8_t leg_id)
 {
 
-  for (int jj = 0; jj < 3; jj++)
+  for (int8_t jj = 0; jj < 3; jj++)
   {
     motors_angle_encoder[leg_id][jj] = deg_to_encoder(3 * leg_id + jj, motors_angle_deg[leg_id][jj]);
   }
@@ -237,7 +237,7 @@ ErrorCode Droideka::encode_leg_angles(int leg_id)
   return NO_ERROR;
 }
 
-int32_t Droideka::deg_to_encoder(int motor_id, float deg_angle)
+int32_t Droideka::deg_to_encoder(int8_t motor_id, float deg_angle)
 {
   int32_t encoder_angle;
   encoder_angle = extreme_values_motor[motor_id][1] + extreme_values_motor[motor_id][3] * (int32_t)(deg_angle / servo_deg_ratio);
@@ -245,7 +245,7 @@ int32_t Droideka::deg_to_encoder(int motor_id, float deg_angle)
   return encoder_angle;
 }
 
-float Droideka::encoder_to_deg(int motor_id, int32_t encoder_angle)
+float Droideka::encoder_to_deg(int8_t motor_id, int32_t encoder_angle)
 {
   float deg_angle;
   deg_angle = (float)(encoder_angle - extreme_values_motor[motor_id][1]) * servo_deg_ratio / (float)extreme_values_motor[motor_id][3];
@@ -276,7 +276,7 @@ DroidekaMode Droideka::get_mode()
 {
   Droideka_Position curr = get_current_position();
   bool test = 1;
-  for (int ii = 0; ii < LEG_NB; ii++)
+  for (int8_t ii = 0; ii < LEG_NB; ii++)
   {
     test = test * (curr.legs[ii][2] >= Y_NOT_TOUCHING);
   }
@@ -314,7 +314,7 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
   }
   else
   {
-    for (int ii = 0; ii < LEG_NB; ii++)
+    for (int8_t ii = 0; ii < LEG_NB; ii++)
     {
       motors_angle_deg[ii][0] = pos.legs[ii][0];
 
@@ -370,7 +370,7 @@ ErrorCode Droideka::park(int time = 1000)
 {
   float temp[LEG_NB][3];
   Droideka_Position curr = get_current_position();
-  for (int ii = 0; ii < LEG_NB; ii++)
+  for (int8_t ii = 0; ii < LEG_NB; ii++)
   {
     temp[ii][0] = curr.legs[ii][0];
     temp[ii][1] = curr.legs[ii][1];
@@ -439,9 +439,9 @@ Droideka_Position Droideka::get_current_position()
 
   float temp[LEG_NB][3];
 
-  for (int ii = 0; ii < LEG_NB; ii++)
+  for (int8_t ii = 0; ii < LEG_NB; ii++)
   {
-    for (int jj = 0; jj < 3; jj++)
+    for (int8_t jj = 0; jj < 3; jj++)
     {
       motors_angle_encoder[ii][jj] = lastState.positions[3 * ii + jj];
       motors_angle_deg[ii][jj] = encoder_to_deg(3 * ii + jj, motors_angle_encoder[ii][jj]);
@@ -485,7 +485,7 @@ ErrorCode Droideka::next_movement()
     }
     if (now - movement.start >= movement.time_iter[movement.iter] && now - movement.start < movement.time_span)
     {
-      for (int ii = movement.iter + 1; ii < movement.nb_iter; ii++)
+      for (int8_t ii = movement.iter + 1; ii < movement.nb_iter; ii++)
       {
         if (now - movement.start >= movement.time_iter[ii - 1] && now - movement.start < movement.time_iter[ii])
         {
@@ -536,7 +536,7 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
   }
 }
 
-ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time, int one_leg = -1)
+ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time, int8_t one_leg = -1)
 {
   if (movement.started == false || movement.finished == true)
   {
