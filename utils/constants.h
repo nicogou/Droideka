@@ -12,11 +12,11 @@
 #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
 #define MAX_ANGLE_COG_MOVE 1
 
-#define Y_TOUCHING -11.0
-#define Y_NOT_TOUCHING -6.0
+#define Y_TOUCHING -10.0
+#define Y_NOT_TOUCHING -7.0
 #define Y_ZERO -7.0    // A vérifier
 #define THETA_IDLE 0.0 //45.0      // A vérifier
-#define X_IDLE 6.0     // A vérifier
+#define X_IDLE 5.0     // A vérifier
 
 #define Y_MAINTENANCE 0.0     // Maintenance
 #define THETA_MAINTENANCE 0.0 // Maintenance
