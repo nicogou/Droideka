@@ -42,7 +42,7 @@ void loop()
     if (droid_1->droideka_rec->digitalFalling(0))
     {
         // droid_1->set_movement(Droideka_Movement(upked, trans_x, trans_y, trans_z, rot, time_ms));
-        droid_1->set_movement(Droideka_Movement(upked, 0, 0, 0, 0, 2000, true));
+        droid_1->set_movement(Droideka_Movement(upked, 0, 0, 0, 0, 15000, true));
     }
     if (droid_1->droideka_rec->digitalState(7))
     {
