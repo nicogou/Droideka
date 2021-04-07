@@ -465,6 +465,27 @@ ErrorCode Droideka::stop_movement()
   }
 }
 
+ErrorCode Droideka::pause_movement(bool pause = true)
+{
+  if (movement.started == true && movement.finished == false)
+  {
+    unsigned long now = micros(); // Watch out for rollover!
+    if (movement.paused == false)
+    {
+      movement.start = now - movement.start;
+      movement.paused = true;
+      Serial.println("Movement paused!");
+    }
+    else
+    {
+      movement.start = now - movement.start;
+      movement.paused = false;
+      Serial.println("Movement unpaused!");
+    }
+    return NO_ERROR;
+  }
+}
+
 ErrorCode Droideka::next_movement()
 {
   if (movement.started == false && movement.finished == false)
@@ -484,6 +505,10 @@ ErrorCode Droideka::next_movement()
   }
   if (movement.started == true && movement.finished == false)
   {
+    if (movement.paused)
+    {
+      return NO_ERROR;
+    }
     unsigned long now = micros();
     if (now - movement.start >= movement.time_span)
     {
