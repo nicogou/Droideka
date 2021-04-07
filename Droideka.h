@@ -80,6 +80,7 @@ public:
     ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);
     ErrorCode next_movement();
     ErrorCode stop_movement();
+    ErrorCode pause_movement(bool pause = true);
     ErrorCode add_position(Droideka_Position pos, unsigned long time, int8_t one_leg = -1);
     ErrorCode keep_going();
     ErrorCode next_movement_sequence(MovementSequence ms);
