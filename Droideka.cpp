@@ -469,6 +469,12 @@ ErrorCode Droideka::next_movement()
 {
   if (movement.started == false && movement.finished == false)
   {
+    ErrorCode volts = check_voltage();
+    if (volts == SERVOS_VOLTAGE_TOO_LOW)
+    {
+      movement.finished = true;
+      return volts;
+    }
     movement.next_position = movement.get_future_position(movement.start_position, 0);
     movement.start = micros();
     move_into_position(movement.next_position, movement.time_iter[0] / 1000);
