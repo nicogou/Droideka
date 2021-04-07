@@ -44,6 +44,14 @@ void loop()
         // droid_1->set_movement(Droideka_Movement(upked, trans_x, trans_y, trans_z, rot, time_ms));
         droid_1->set_movement(Droideka_Movement(upked, 0, 0, 0, 0, 15000, true));
     }
+    if (droid_1->droideka_rec->digitalState(0))
+    {
+        droid_1->next_movement_sequence(INTERMEDIATE_SEQUENCE);
+    }
+    if (droid_1->droideka_rec->digitalRising(0))
+    {
+        droid_1->next_movement_sequence(FINISHING_SEQUENCE);
+    }
     if (droid_1->droideka_rec->digitalState(7))
     {
         droid_1->set_movement(Droideka_Movement(upked, droid_1->droideka_rec->analog[1], droid_1->droideka_rec->analog[0], droid_1->droideka_rec->analog[3], droid_1->droideka_rec->analog[2], 500, false), true);
@@ -80,4 +88,5 @@ void loop()
         droid_1->disable_enable_motors();
     }
     droid_1->next_movement();
+    droid_1->keep_going();
 }

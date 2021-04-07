@@ -509,6 +509,7 @@ ErrorCode Droideka::next_movement()
         movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
       }
       move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter] - now) / 1000);
+      current_position.print_position("Current Position");
       movement.next_pos_calc = false;
       movement.iter++;
     }
@@ -546,5 +547,31 @@ ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time, int8
   else
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  }
+}
+
+ErrorCode Droideka::keep_going()
+{
+  if (movement.started == false)
+  {
+    return NO_ERROR;
+  }
+  if (movement.started == true && movement.finished == true)
+  {
+    movement.keep_going();
+    return NO_ERROR;
+  }
+  else
+  {
+    return MOVEMENT_NOT_FINISHED;
+  }
+}
+
+ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
+{
+  if (movement.type == ROBOT_TRAJ)
+  {
+    movement.next_seq = ms;
+    return NO_ERROR;
   }
 }
