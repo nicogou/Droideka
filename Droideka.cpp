@@ -460,6 +460,7 @@ ErrorCode Droideka::stop_movement()
   if (movement.started == true && movement.finished == false)
   {
     movement.finished = true;
+    movement.next_seq = STARTING_SEQUENCE;
     return NO_ERROR;
   }
 }
@@ -468,6 +469,12 @@ ErrorCode Droideka::next_movement()
 {
   if (movement.started == false && movement.finished == false)
   {
+    ErrorCode volts = check_voltage();
+    if (volts == SERVOS_VOLTAGE_TOO_LOW)
+    {
+      movement.finished = true;
+      return volts;
+    }
     movement.next_position = movement.get_future_position(movement.start_position, 0);
     movement.start = micros();
     move_into_position(movement.next_position, movement.time_iter[0] / 1000);
@@ -509,6 +516,7 @@ ErrorCode Droideka::next_movement()
         movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
       }
       move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter] - now) / 1000);
+      current_position.print_position("Current Position");
       movement.next_pos_calc = false;
       movement.iter++;
     }
@@ -546,5 +554,31 @@ ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time, int8
   else
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  }
+}
+
+ErrorCode Droideka::keep_going()
+{
+  if (movement.started == false)
+  {
+    return NO_ERROR;
+  }
+  if (movement.started == true && movement.finished == true)
+  {
+    movement.keep_going();
+    return NO_ERROR;
+  }
+  else
+  {
+    return MOVEMENT_NOT_FINISHED;
+  }
+}
+
+ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
+{
+  if (movement.type == ROBOT_TRAJ)
+  {
+    movement.next_seq = ms;
+    return NO_ERROR;
   }
 }
