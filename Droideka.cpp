@@ -460,6 +460,7 @@ ErrorCode Droideka::stop_movement()
   if (movement.started == true && movement.finished == false)
   {
     movement.finished = true;
+    movement.next_seq = STARTING_SEQUENCE;
     return NO_ERROR;
   }
 }
