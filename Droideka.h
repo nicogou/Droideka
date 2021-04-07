@@ -43,6 +43,11 @@ public:
     // IDs 6, 7 and 8 represent the rear left leg
     // IDs 9, 10 and 11 represent the rear right leg
 
+    const int led[LED_NB] = {RED_LED, GREEN_LED, BLUE_LED};
+    const int problem_led = 0;
+    const int ok_led = 1;
+    const int info_led = 2;
+
     // Longitudinal Motor
     int8_t longitudinal_mot_pin_1;   // This pi and the following one are used to set the way the longitudinal motor spins.
     int8_t longitudinal_mot_pin_2;   // They can also be used to brake the motor.

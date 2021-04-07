@@ -29,3 +29,8 @@
 #define SERVO_BUS_WRITE_PIN 13
 
 #define SERVOS_UNDER_VOLTAGE_LIMIT 7400
+
+#define LED_NB 3
+#define BLUE_LED 13
+#define GREEN_LED 14
+#define RED_LED 15
