@@ -13,7 +13,7 @@
 #define MAX_ANGLE_COG_MOVE 1
 
 #define Y_TOUCHING -10.0
-#define Y_NOT_TOUCHING -7.0
+#define Y_NOT_TOUCHING -6.0
 #define Y_ZERO -7.0    // A vérifier
 #define THETA_IDLE 0.0 //45.0      // A vérifier
 #define X_IDLE 5.0     // A vérifier
@@ -29,3 +29,8 @@
 #define SERVO_BUS_WRITE_PIN 13
 
 #define SERVOS_UNDER_VOLTAGE_LIMIT 7400
+
+#define LED_NB 3
+#define BLUE_LED 13
+#define GREEN_LED 14
+#define RED_LED 15

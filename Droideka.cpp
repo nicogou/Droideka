@@ -23,6 +23,12 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
     servos[ii] = new LX16AServo(&servoBus, ii);
   }
 
+  for (int ii = 0; ii < LED_NB; ii++)
+  {
+    pinMode(led[ii], OUTPUT);
+    digitalWrite(led[ii], 0);
+  }
+
   while (check_voltage() == SERVOS_VOLTAGE_TOO_LOW)
   {
     delay(1000);
@@ -66,10 +72,12 @@ ErrorCode Droideka::check_voltage()
     }
     ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
     Serial.println("Servo voltage too low");
+    digitalWrite(led[problem_led], 1);
     return result;
   }
   else
   {
+    digitalWrite(led[problem_led], 0);
     return NO_ERROR;
   }
 }

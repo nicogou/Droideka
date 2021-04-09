@@ -43,6 +43,11 @@ public:
     // IDs 6, 7 and 8 represent the rear left leg
     // IDs 9, 10 and 11 represent the rear right leg
 
+    const int led[LED_NB] = {RED_LED, GREEN_LED, BLUE_LED};
+    const int problem_led = 0;
+    const int ok_led = 1;
+    const int info_led = 2;
+
     // Longitudinal Motor
     int8_t longitudinal_mot_pin_1;   // This pi and the following one are used to set the way the longitudinal motor spins.
     int8_t longitudinal_mot_pin_2;   // They can also be used to brake the motor.
@@ -114,16 +119,16 @@ public:
     const int32_t extreme_values_motor[MOTOR_NB][4] = {
         {2520, 11520, 20520, 1},
         {9480, 12000, 22800, -1},
-        {0, 12000, 22800, -1},
+        {0, 7500, 20500, -1},
         {3000, 12000, 21000, -1},
         {1200, 12000, 14520, 1},
-        {0, 12000, 24000, 1},
+        {3500, 16500, 24000, 1},
         {3240, 12240, 21240, -1},
         {1200, 12000, 14520, 1},
-        {0, 12000, 24000, 1},
+        {3500, 16500, 24000, 1},
         {3240, 12240, 21240, 1},
         {9480, 12000, 22800, -1},
-        {0, 12000, 24000, -1},
+        {0, 7500, 20500, -1},
     };
 
 private:
