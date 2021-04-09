@@ -468,6 +468,7 @@ ErrorCode Droideka::stop_movement()
   if (movement.started == true && movement.finished == false)
   {
     movement.finished = true;
+    movement.seq = STARTING_SEQUENCE;
     movement.next_seq = STARTING_SEQUENCE;
     return NO_ERROR;
   }
@@ -609,7 +610,7 @@ ErrorCode Droideka::keep_going()
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 {
-  if (movement.type == ROBOT_TRAJ)
+  if (movement.type == ROBOT_TRAJ && movement.finished == false)
   {
     movement.next_seq = ms;
     return NO_ERROR;
