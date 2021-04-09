@@ -42,7 +42,7 @@ void loop()
     if (droid_1->droideka_rec->digitalFalling(0))
     {
         // droid_1->set_movement(Droideka_Movement(upked, trans_x, trans_y, trans_z, rot, time_ms));
-        droid_1->set_movement(Droideka_Movement(upked, 0, 0, 0, 0, 7500, true));
+        droid_1->set_movement(Droideka_Movement(upked, -(droid_1->droideka_rec->analog[1] - droid_1->droideka_rec->middle[1]), droid_1->droideka_rec->analog[0] - droid_1->droideka_rec->middle[0], droid_1->droideka_rec->analog[3] - droid_1->droideka_rec->middle[3], -(droid_1->droideka_rec->analog[2] - droid_1->droideka_rec->middle[2]), 7500, true));
     }
     if (droid_1->droideka_rec->digitalState(0))
     {
