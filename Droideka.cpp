@@ -574,10 +574,12 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
       if (current_position == mvmt.start_position)
       {
         movement = mvmt;
+        digitalWrite(led[info_led], 0);
         return NO_ERROR;
       }
       else
       {
+        digitalWrite(led[info_led], 1);
         return CURRENT_POS_AND_STARTING_POS_NOT_MATCHING;
       }
     }
