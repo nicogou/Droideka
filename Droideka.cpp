@@ -29,7 +29,7 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
     digitalWrite(led[ii], 0);
   }
 
-  while (check_voltage() == SERVOS_VOLTAGE_TOO_LOW)
+  while (check_voltage(true) == SERVOS_VOLTAGE_TOO_LOW)
   {
     delay(1000);
   }
@@ -45,40 +45,44 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
   movement.finished = true;
 }
 
-ErrorCode Droideka::check_voltage()
+ErrorCode Droideka::check_voltage(bool overwriting = false)
 {
-  uint32_t tmp = 0;
-  min_voltage = 9000;
-  for (int8_t ii = 0; ii < MOTOR_NB; ii++)
+  if (overwriting || sinceVoltageCheck >= VOLTAGE_CHECK_TIMER)
   {
-    servo_voltage[ii] = servos[ii]->vin();
-    tmp += servo_voltage[ii];
-    if (servo_voltage[ii] > max_voltage)
-    {
-      max_voltage = servo_voltage[ii];
-    }
-    if (servo_voltage[ii] < min_voltage)
-    {
-      min_voltage = servo_voltage[ii];
-    }
-  }
-  avg_voltage = tmp / MOTOR_NB;
-
-  if (min_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
-  {
+    sinceVoltageCheck = 0;
+    uint32_t tmp = 0;
+    min_voltage = 9000;
     for (int8_t ii = 0; ii < MOTOR_NB; ii++)
     {
-      disable_enable_motors();
+      servo_voltage[ii] = servos[ii]->vin();
+      tmp += servo_voltage[ii];
+      if (servo_voltage[ii] > max_voltage)
+      {
+        max_voltage = servo_voltage[ii];
+      }
+      if (servo_voltage[ii] < min_voltage)
+      {
+        min_voltage = servo_voltage[ii];
+      }
     }
-    ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
-    Serial.println("Servo voltage too low");
-    digitalWrite(led[problem_led], 1);
-    return result;
-  }
-  else
-  {
-    digitalWrite(led[problem_led], 0);
-    return NO_ERROR;
+    avg_voltage = tmp / MOTOR_NB;
+
+    if (min_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
+    {
+      for (int8_t ii = 0; ii < MOTOR_NB; ii++)
+      {
+        disable_enable_motors();
+      }
+      ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
+      Serial.println("Servo voltage too low");
+      digitalWrite(led[problem_led], 1);
+      return result;
+    }
+    else
+    {
+      digitalWrite(led[problem_led], 0);
+      return NO_ERROR;
+    }
   }
 }
 
@@ -501,7 +505,7 @@ ErrorCode Droideka::next_movement()
   {
     if (movement.type != CENTER_OF_GRAVITY_TRAJ)
     {
-      ErrorCode volts = check_voltage();
+      ErrorCode volts = check_voltage(true);
       if (volts == SERVOS_VOLTAGE_TOO_LOW)
       {
         movement.finished = true;

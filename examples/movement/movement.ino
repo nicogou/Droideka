@@ -36,6 +36,7 @@ void setup()
 
 void loop()
 {
+    droid_1->check_voltage();
     droid_1->receive_data();
     Droideka_Position upked(droid_1->unparked);
 
