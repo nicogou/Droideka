@@ -39,16 +39,12 @@ void loop()
     droid_1->receive_data();
     Droideka_Position upked(droid_1->unparked);
 
-    if (droid_1->droideka_rec->digitalFalling(0))
+    if (droid_1->droideka_rec->analogThreshold_2D(0, 1, 200, SUP_OR_EQUAL))
     {
-        // droid_1->set_movement(Droideka_Movement(upked, trans_x, trans_y, trans_z, rot, time_ms));
-        droid_1->set_movement(Droideka_Movement(upked, 0, 0, 0, 0, 7500, true));
+        droid_1->set_movement(Droideka_Movement(upked, -(droid_1->droideka_rec->analog[1] - droid_1->droideka_rec->middle[1]), droid_1->droideka_rec->analog[0] - droid_1->droideka_rec->middle[0], droid_1->droideka_rec->analog[3] - droid_1->droideka_rec->middle[3], -(droid_1->droideka_rec->analog[2] - droid_1->droideka_rec->middle[2]), 7500, true));
+        droid_1->next_movement_sequence(INTERMEDIATE_SEQUENCE, -(droid_1->droideka_rec->analog[0] - droid_1->droideka_rec->middle[0]), droid_1->droideka_rec->analog[1] - droid_1->droideka_rec->middle[1], -(droid_1->droideka_rec->analog[2] - droid_1->droideka_rec->middle[2]));
     }
-    if (droid_1->droideka_rec->digitalState(0))
-    {
-        droid_1->next_movement_sequence(INTERMEDIATE_SEQUENCE);
-    }
-    if (droid_1->droideka_rec->digitalRising(0))
+    if (droid_1->droideka_rec->analogThreshold_2D(0, 1, 200, INF))
     {
         droid_1->next_movement_sequence(FINISHING_SEQUENCE);
     }
