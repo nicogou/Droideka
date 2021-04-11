@@ -407,7 +407,7 @@ ErrorCode Droideka::park(int time = 1000)
 
 ErrorCode Droideka::unpark(int time = 1000)
 {
-  ErrorCode result = set_movement(Droideka_Movement(current_position, Droideka_Position(unparking), time));
+  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(parked), Droideka_Position(unparking), time));
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
     return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
@@ -571,8 +571,15 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
   {
     if (movement.started == false || movement.finished == true)
     {
-      movement = mvmt;
-      return NO_ERROR;
+      if (current_position == mvmt.start_position)
+      {
+        movement = mvmt;
+        return NO_ERROR;
+      }
+      else
+      {
+        return CURRENT_POS_AND_STARTING_POS_NOT_MATCHING;
+      }
     }
     else
     {
