@@ -613,9 +613,22 @@ ErrorCode Droideka::keep_going()
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 {
-  if (movement.type == ROBOT_TRAJ && movement.finished == false)
+  if (movement.type == ROBOT_TRAJ && movement.started == true && movement.finished == false)
   {
     movement.next_seq = ms;
+    return NO_ERROR;
+  }
+}
+
+ErrorCode Droideka::next_movement_sequence(MovementSequence ms, int16_t next_long, int16_t next_lat, int16_t next_ang)
+{
+  if (movement.type == ROBOT_TRAJ && movement.started == true && movement.finished == false)
+  {
+    movement.next_seq = ms;
+    movement.next_longitudinal = next_long;
+    movement.next_lateral = next_lat;
+    movement.next_angle = next_ang;
+
     return NO_ERROR;
   }
 }
