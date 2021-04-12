@@ -51,11 +51,11 @@ void loop()
     // }
     if (droid_1->droideka_rec->digitalFalling(0))
     {
-        droid_1->set_movement(Droideka_Movement(upked, 0.0, 0.0, 0.0, 1.0, 7500, true));
+        droid_1->set_movement(Droideka_Movement(upked, (float)0.0, (float)0.0, (float)0.0, (float)1.0, 7500));
     }
     if (droid_1->droideka_rec->digitalState(0))
     {
-        droid_1->next_movement_sequence(INTERMEDIATE_SEQUENCE, 0.0, 0.0, 1.0);
+        droid_1->next_movement_sequence(INTERMEDIATE_SEQUENCE, (float)0.0, (float)0.0, (float)1.0);
     }
     if (droid_1->droideka_rec->digitalRising(0))
     {
@@ -67,7 +67,7 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalState(7))
     {
-        droid_1->set_movement(Droideka_Movement(upked, droid_1->droideka_rec->analog[1], droid_1->droideka_rec->analog[0], droid_1->droideka_rec->analog[3], droid_1->droideka_rec->analog[2], 500, false), true);
+        droid_1->set_movement(Droideka_Movement(upked, droid_1->droideka_rec->analog[1], droid_1->droideka_rec->analog[0], droid_1->droideka_rec->analog[3], droid_1->droideka_rec->analog[2], 500), true);
     }
     if (droid_1->droideka_rec->digitalRising(7))
     {
