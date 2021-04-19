@@ -71,7 +71,7 @@ public:
     ErrorCode change_mode(); // Goes from walking to rolling mode and vice-versa.
 
     // ROLLING MODE
-    // ErrorCode roll(int speed = 0); // Longitudinal movement of the robot.
+    ErrorCode roll(int speed = 0); // Longitudinal movement of the robot.
 
     // WALKING MODE
     ErrorCode in_position(Droideka_Position pos, Action &pos_act, int time); // Checks if the wanted position is reachable given the mechanical constraints of the robot.
