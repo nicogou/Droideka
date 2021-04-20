@@ -86,6 +86,94 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
   }
 }
 
+ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
+{
+  Wire.begin();
+  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+
+  // initialize device
+  Serial.println(F("Initializing I2C devices..."));
+  mpu.initialize();
+  pinMode(imu_interrupt_pin, INPUT);
+
+  // verify connection
+  Serial.println(F("Testing device connections..."));
+  if (mpu.testConnection())
+  {
+    digitalWrite(led[problem_led], 0);
+    digitalWrite(led[ok_led], 1);
+    Serial.println(F("MPU6050 connection successful"));
+  }
+  else
+  {
+    digitalWrite(led[ok_led], 0);
+    digitalWrite(led[problem_led], 1);
+    Serial.println(F("MPU6050 connection failed"));
+    return MPU_6050_CONNECTION_FAILED;
+  }
+  delay(2000);
+  digitalWrite(led[ok_led], 0);
+  digitalWrite(led[problem_led], 0);
+
+  // load and configure the DMP
+  Serial.println(F("Initializing DMP..."));
+  devStatus = mpu.dmpInitialize();
+
+  // supply your own gyro offsets here, scaled for min sensitivity
+  mpu.setXGyroOffset(X_GYRO_OFFSET);
+  mpu.setYGyroOffset(Y_GYRO_OFFSET);
+  mpu.setZGyroOffset(Z_GYRO_OFFSET);
+  mpu.setXAccelOffset(X_ACCEL_OFFSET);
+  mpu.setYAccelOffset(Y_ACCEL_OFFSET);
+  mpu.setZAccelOffset(Z_ACCEL_OFFSET);
+
+  // make sure it worked (returns 0 if so)
+  if (devStatus == 0)
+  {
+    // Calibration Time: generate offsets and calibrate our MPU6050
+    mpu.CalibrateAccel(6);
+    mpu.CalibrateGyro(6);
+    Serial.println();
+    mpu.PrintActiveOffsets();
+    // turn on the DMP, now that it's ready
+    Serial.println(F("Enabling DMP..."));
+    mpu.setDMPEnabled(true);
+
+    // enable Arduino interrupt detection
+    Serial.print(F("Enabling interrupt detection (Arduino external interrupt "));
+    Serial.print(digitalPinToInterrupt(imu_interrupt_pin));
+    Serial.println(F(")..."));
+    attachInterrupt(digitalPinToInterrupt(imu_interrupt_pin), dmp_Data_Ready, RISING);
+    mpuIntStatus = mpu.getIntStatus();
+
+    // set our DMP Ready flag so the main loop() function knows it's okay to use it
+    Serial.println(F("DMP ready! Waiting for first interrupt..."));
+    dmpReady = true;
+
+    // get expected DMP packet size for later comparison
+    packetSize = mpu.dmpGetFIFOPacketSize();
+    return NO_ERROR;
+  }
+  else
+  {
+    // ERROR!
+    // 1 = initial memory load failed
+    // 2 = DMP configuration updates failed
+    // (if it's going to break, usually the code will be 1)
+    Serial.print(F("DMP Initialization failed (code "));
+    Serial.print(devStatus);
+    Serial.println(F(")"));
+
+    digitalWrite(led[ok_led], 0);
+    digitalWrite(led[problem_led], 1);
+    return MPU_6050_DMP_INIT_FAILED;
+  }
+  delay(3000);
+
+  digitalWrite(led[ok_led], 0);
+  digitalWrite(led[problem_led], 0);
+}
+
 bool Droideka::receive_data()
 {
   if (droideka_rec->state())

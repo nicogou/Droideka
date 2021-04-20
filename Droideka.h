@@ -8,6 +8,19 @@
 #include <Droideka_Position.h>
 #include <Droideka_Movement.h>
 #include <math.h>
+#include "I2Cdev.h"
+#include "MPU6050_6Axis_MotionApps_V6_12.h"
+#include "Wire.h"
+
+// ================================================================
+// ===               INTERRUPT DETECTION ROUTINE                ===
+// ================================================================
+
+volatile bool mpuInterrupt = false; // indicates whether MPU interrupt pin has gone high
+inline void dmp_Data_Ready()
+{
+    mpuInterrupt = true;
+}
 
 class Droideka
 {
@@ -53,9 +66,34 @@ public:
     int8_t longitudinal_mot_pin_2;   // They can also be used to brake the motor.
     int8_t longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
 
+    // MPU6050
+    // class default I2C address is 0x68
+    // specific I2C addresses may be passed as a parameter here
+    // AD0 low = 0x68 (default for SparkFun breakout and InvenSense evaluation board)
+    // AD0 high = 0x69
+    MPU6050 mpu;
+    // MPU control/status vars
+    bool dmpReady = false;  // set true if DMP init was successful
+    uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+    uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+    uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+    uint16_t fifoCount;     // count of all bytes currently in FIFO
+    uint8_t fifoBuffer[64]; // FIFO storage buffer
+
+    // orientation/motion vars
+    Quaternion q;        // [w, x, y, z]         quaternion container
+    VectorInt16 aa;      // [x, y, z]            accel sensor measurements
+    VectorInt16 gy;      // [x, y, z]            gyro sensor measurements
+    VectorInt16 aaReal;  // [x, y, z]            gravity-free accel sensor measurements
+    VectorInt16 aaWorld; // [x, y, z]            world-frame accel sensor measurements
+    VectorFloat gravity; // [x, y, z]            gravity vector
+    float euler[3];      // [psi, theta, phi]    Euler angle container
+    float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm);            // Class constructor.
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm); // Class constructor.
     void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm);                                                                               // Class initializer. Sets up motors.
+    ErrorCode initialize_imu(int8_t imu_interrupt_pin);
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
     ErrorCode check_voltage(bool overwriting = false);
     elapsedMillis sinceVoltageCheck;
