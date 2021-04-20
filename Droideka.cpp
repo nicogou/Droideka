@@ -1,15 +1,17 @@
 #include "Droideka.h"
 
-Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm, int8_t imu_int_pin)
 {
   initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_2, l_m_p_pwm);
   droideka_rec = new Universal_Receiver(rx, tx, btHardware);
+  initialize_imu(imu_int_pin);
 }
 
-Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm, int8_t imu_int_pin)
 {
   initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_2, l_m_p_pwm);
   droideka_rec = new Universal_Receiver(serial_receiver, btHardware);
+  initialize_imu(imu_int_pin);
 }
 
 void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm)
@@ -84,6 +86,16 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
       return NO_ERROR;
     }
   }
+}
+
+// ================================================================
+// ===               INTERRUPT DETECTION ROUTINE                ===
+// ================================================================
+
+volatile bool mpuInterrupt = false; // indicates whether MPU interrupt pin has gone high
+inline void dmp_Data_Ready()
+{
+  mpuInterrupt = true;
 }
 
 ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
@@ -172,6 +184,27 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
 
   digitalWrite(led[ok_led], 0);
   digitalWrite(led[problem_led], 0);
+}
+
+void Droideka::read_imu()
+{
+  // if programming failed, don't try to do anything
+  if (!dmpReady)
+    return;
+  // read a packet from FIFO
+  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
+  { // Get the Latest packet
+    // display Yaw, Pitch and Roll angles in degrees
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    Serial.print("ypr\t");
+    Serial.print(ypr[0] * 180 / M_PI);
+    Serial.print("\t");
+    Serial.print(ypr[1] * 180 / M_PI);
+    Serial.print("\t");
+    Serial.println(ypr[2] * 180 / M_PI);
+  }
 }
 
 bool Droideka::receive_data()
