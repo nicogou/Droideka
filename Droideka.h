@@ -90,7 +90,7 @@ public:
     ErrorCode add_position(Droideka_Position pos, unsigned long time, int8_t one_leg = -1);
     ErrorCode keep_going();
     ErrorCode next_movement_sequence(MovementSequence ms);
-    ErrorCode next_movement_sequence(MovementSequence ms, int16_t next_long, int16_t next_lat, int16_t next_ang);
+    ErrorCode next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang);
 
     const float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},

@@ -345,8 +345,8 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
 
       motors_angle_rad[ii][1] = atan(pos.legs[ii][2] / pos.legs[ii][1]) - atan(tibia_length * sin(motors_angle_rad[ii][2]) / (hip_length + tibia_length * cos(motors_angle_rad[ii][2])));
 
-      motors_angle_deg[ii][1] = motors_angle_rad[ii][1] * 180 / 3.141592;
-      motors_angle_deg[ii][2] = motors_angle_rad[ii][2] * 180 / 3.141592;
+      motors_angle_deg[ii][1] = motors_angle_rad[ii][1] * 180 / PI;
+      motors_angle_deg[ii][2] = motors_angle_rad[ii][2] * 180 / PI;
 
       ErrorCode error = encode_leg_angles(ii);
       if (error != NO_ERROR)
@@ -457,7 +457,7 @@ Droideka_Position Droideka::get_current_position()
     {
       motors_angle_encoder[ii][jj] = lastState.positions[3 * ii + jj];
       motors_angle_deg[ii][jj] = encoder_to_deg(3 * ii + jj, motors_angle_encoder[ii][jj]);
-      motors_angle_rad[ii][jj] = motors_angle_deg[ii][jj] * 3.141592 / 180;
+      motors_angle_rad[ii][jj] = motors_angle_deg[ii][jj] * PI / 180;
     }
     temp[ii][0] = motors_angle_deg[ii][0];
     temp[ii][1] = HIP_LENGTH * cos(motors_angle_rad[ii][1]) + TIBIA_LENGTH * cos(motors_angle_rad[ii][1] + motors_angle_rad[ii][2]);
@@ -557,7 +557,7 @@ ErrorCode Droideka::next_movement()
         movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
       }
       move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter] - now) / 1000);
-      current_position.print_position("Current Position");
+      current_position.print_position("Current Position " + String(movement.iter));
       movement.next_pos_calc = false;
       movement.iter++;
     }
@@ -626,16 +626,16 @@ ErrorCode Droideka::keep_going()
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 {
-  if (movement.type == ROBOT_TRAJ && movement.started == true && movement.finished == false)
+  if (movement.type == ROBOT_TRAJ && movement.finished == false)
   {
     movement.next_seq = ms;
     return NO_ERROR;
   }
 }
 
-ErrorCode Droideka::next_movement_sequence(MovementSequence ms, int16_t next_long, int16_t next_lat, int16_t next_ang)
+ErrorCode Droideka::next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang)
 {
-  if (movement.type == ROBOT_TRAJ && movement.started == true && movement.finished == false)
+  if (movement.type == ROBOT_TRAJ && movement.finished == false)
   {
     movement.next_seq = ms;
     movement.next_longitudinal = next_long;
