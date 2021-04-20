@@ -149,43 +149,43 @@ bool Droideka::receive_data()
   return false;
 }
 
-// ErrorCode Droideka::roll(int speed = 0)
-// {
-//   int pin_1 = longitudinal_mot_pin_1;
-//   int pin_2 = longitudinal_mot_pin_2;
-//   int pin_pwm = longitudinal_mot_pin_pwm;
+ErrorCode Droideka::roll(int speed = 0)
+{
+  int pin_1 = longitudinal_mot_pin_1;
+  int pin_2 = longitudinal_mot_pin_2;
+  int pin_pwm = longitudinal_mot_pin_pwm;
 
-//   // Choose forward or backward motion
-//   if (speed > 0)
-//   {
-//     digitalWrite(pin_1, 1);
-//     digitalWrite(pin_2, 0);
-//   }
-//   else if (speed < 0)
-//   {
-//     digitalWrite(pin_1, 0);
-//     digitalWrite(pin_2, 1);
-//   }
-//   else
-//   {
-//     digitalWrite(pin_1, 0);
-//     digitalWrite(pin_2, 0);
-//   }
+  // Choose forward or backward motion
+  if (speed > 0)
+  {
+    digitalWrite(pin_1, 1);
+    digitalWrite(pin_2, 0);
+  }
+  else if (speed < 0)
+  {
+    digitalWrite(pin_1, 0);
+    digitalWrite(pin_2, 1);
+  }
+  else
+  {
+    digitalWrite(pin_1, 0);
+    digitalWrite(pin_2, 0);
+  }
 
-//   int mapped_speed = abs(speed);
-//   mapped_speed = map(mapped_speed, 0, 100, 0, 255);
-//   // Choose speed
-//   if (mapped_speed >= 0 && mapped_speed < 256)
-//   {
-//     analogWrite(pin_pwm, mapped_speed);
-//   }
-//   else
-//   {
-//     return OUT_OF_BOUNDS_SPEED_SPECIFIED;
-//   }
+  int mapped_speed = abs(speed);
+  mapped_speed = map(mapped_speed, 0, 100, 0, 255);
+  // Choose speed
+  if (mapped_speed >= 0 && mapped_speed < 256)
+  {
+    analogWrite(pin_pwm, mapped_speed);
+  }
+  else
+  {
+    return OUT_OF_BOUNDS_SPEED_SPECIFIED;
+  }
 
-//   return NO_ERROR;
-// }
+  return NO_ERROR;
+}
 
 void Droideka::disable_enable_motors()
 {
