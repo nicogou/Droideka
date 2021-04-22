@@ -101,6 +101,24 @@ void loop()
     {
         droid_1->disable_enable_motors();
     }
+
+    if (droid_1->droideka_rec->digitalFalling(12))
+    {
+        droid_1->roll(100);
+    }
+    if (droid_1->droideka_rec->digitalRising(12))
+    {
+        droid_1->roll(0);
+    }
+    if (droid_1->droideka_rec->digitalFalling(13))
+    {
+        droid_1->roll(-100);
+    }
+    if (droid_1->droideka_rec->digitalRising(13))
+    {
+        droid_1->roll(0);
+    }
+
     droid_1->next_movement();
     droid_1->keep_going();
 }
