@@ -35,3 +35,10 @@
 #define BLUE_LED 13
 #define GREEN_LED 14
 #define RED_LED 15
+
+#define X_GYRO_OFFSET 0
+#define Y_GYRO_OFFSET 0
+#define Z_GYRO_OFFSET 0
+#define X_ACCEL_OFFSET 0
+#define Y_ACCEL_OFFSET 0
+#define Z_ACCEL_OFFSET 0
