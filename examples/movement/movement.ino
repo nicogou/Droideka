@@ -1,6 +1,5 @@
 #include <Droideka.h>
-#define LMP1 2
-#define LMP2 3
+#define LMP1 3
 #define LMP_PWM 4
 #define IMU_INT_PIN 24
 
@@ -29,7 +28,7 @@ void setup()
     }
 
     Serial.begin(9600);
-    droid_1 = new Droideka(&Serial8, 35, &Serial2, thresholds, BT_HW_HC05, LMP1, LMP2, LMP_PWM, IMU_INT_PIN);
+    droid_1 = new Droideka(&Serial8, 35, &Serial2, thresholds, BT_HW_HC05, LMP1, LMP_PWM, IMU_INT_PIN);
 
     Serial.println("Start");
     Serial.println();
@@ -41,7 +40,7 @@ void loop()
     droid_1->receive_data();
     Droideka_Position upked(droid_1->unparked);
     droid_1->read_imu();
-    droid_1->compute_pid();
+    //droid_1->compute_pid();
     // if (droid_1->droideka_rec->analogThreshold_2D(0, 1, 200, SUP_OR_EQUAL))
     // {
     //     droid_1->set_movement(Droideka_Movement(upked, -(droid_1->droideka_rec->analog[1] - droid_1->droideka_rec->middle[1]), droid_1->droideka_rec->analog[0] - droid_1->droideka_rec->middle[0], droid_1->droideka_rec->analog[3] - droid_1->droideka_rec->middle[3], -(droid_1->droideka_rec->analog[2] - droid_1->droideka_rec->middle[2]), 7500, true));
