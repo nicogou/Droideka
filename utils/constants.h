@@ -36,6 +36,14 @@
 #define GREEN_LED 14
 #define RED_LED 15
 
+#define int_1 30
+#define int_2 31
+#define int_3 32
+#define pot_1 39
+#define pot_2 40
+#define pot_3 41
+#define LONG_MOTOR_DEAD_ZONE 59
+
 #define X_GYRO_OFFSET 0
 #define Y_GYRO_OFFSET 0
 #define Z_GYRO_OFFSET 0
