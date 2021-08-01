@@ -182,6 +182,17 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
   }
   delay(3000);
 
+  float avg_pitch = 0;
+  int nb_measures = 5;
+  for (int ii = 0; ii < nb_measures; ii++)
+  {
+    read_imu();
+    avg_pitch += ypr[1] * 180 / M_PI;
+    delay(100);
+  }
+  avg_pitch = avg_pitch / nb_measures;
+  calibrated_pitch = avg_pitch;
+
   digitalWrite(led[ok_led], 0);
   digitalWrite(led[problem_led], 0);
 }
@@ -201,86 +212,104 @@ void Droideka::read_imu()
   }
 }
 
-void Droideka::initialize_pid(){
+void Droideka::initialize_pid()
+{
   pinMode(int_1, INPUT_PULLUP);
   pinMode(int_2, INPUT_PULLUP);
   pinMode(int_3, INPUT_PULLUP);
   pinMode(pot_1, INPUT);
   pinMode(pot_2, INPUT);
   pinMode(pot_3, INPUT);
-  long_pid->SetOutputLimits(LONG_MOTOR_DEAD_ZONE-100,100-LONG_MOTOR_DEAD_ZONE);
-  Kp = ((double)analogRead(pot_1)-1023)*10.0/(-1023.0);
-  Ki = ((double)analogRead(pot_2)-1023)*2.0/(-1023.0);
-  Kd = ((double)analogRead(pot_3)-1023)*6.0/(-1023.0);
-  long_pid->SetTunings(Kp, Ki, Kd);
+  long_pid->SetOutputLimits(LONG_MOTOR_DEAD_ZONE - 100, 100 - LONG_MOTOR_DEAD_ZONE);
+  Kp = ((double)analogRead(pot_1) - 1023) * 10.0 / (-1023.0);
+  Ki = ((double)analogRead(pot_2) - 1023) * 2.0 / (-1023.0);
+  Kd = ((double)analogRead(pot_3) - 1023) * 6.0 / (-1023.0);
+  Serial.println("Kp:" + String(Kp) + " Ki:" + String(Ki) + " Kd:" + String(Kd));
+  // long_pid->SetTunings(Kp, Ki, Kd);
 }
 
-void Droideka::compute_pid(){
-      if (digitalRead(int_1) == 0){
-      // Serial.print("ypr\t");
-      // Serial.print(ypr[0] * 180 / M_PI);
-      // Serial.print("\t");
-      Serial.print(ypr[1] * 180 / M_PI);
-      // Serial.print("\t");
-      // Serial.print(ypr[2] * 180 / M_PI);
+void Droideka::compute_pid()
+{
+  if (digitalRead(int_1) == 0)
+  {
+    // Serial.print("ypr\t");
+    // Serial.print(ypr[0] * 180 / M_PI);
+    // Serial.print("\t");
+    Serial.print(ypr[1] * 180 / M_PI);
+    // Serial.print("\t");
+    // Serial.print(ypr[2] * 180 / M_PI);
+    Serial.print("\t");
+  }
+  if (pid_running == false)
+  {
+    if (digitalRead(int_2) == 0)
+    {
+      Setpoint = 20.0;
+      Serial.println("PID on!");
+      Serial.print("Input : ");
+      Serial.print(Input);
+      Serial.println("\t");
+      long_pid->SetMode(AUTOMATIC);
+      pid_running = true;
+    }
+  }
+  if (pid_running == true)
+  {
+    Input = (double)ypr[1] * 180 / M_PI - calibrated_pitch;
+    if (digitalRead(int_2) == 1)
+    {
+      Serial.println("PID off!");
+      long_pid->SetMode(MANUAL);
+      roll(0);
+      pid_running = false;
+    }
+  }
+
+  if (pid_tunings_updated == false)
+  {
+    if (digitalRead(int_3) == 0)
+    {
+      Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
+      Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
+      Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
+      Serial.print(Kp);
       Serial.print("\t");
+      Serial.print(Ki);
+      Serial.print("\t");
+      Serial.print(Kd);
+      Serial.print("\t");
+      Serial.println();
+      // long_pid->SetTunings(Kp, Ki, Kd);
+      pid_tunings_updated = true;
     }
-    if (pid_running == false){
-        roll(0);
-        if (digitalRead(int_2) == 0){
-            Input = (double)ypr[1] * 180 / M_PI;
-            Setpoint = calibrated_pitch;
-            Serial.println("PID on!");
-            Serial.print("Input : ");
-            Serial.print(Input);
-            Serial.println("\t");
-            long_pid->SetMode(AUTOMATIC);
-            pid_running = true;
-        }
+  }
+  if (pid_tunings_updated == true)
+  {
+    if (digitalRead(int_3) == 1)
+    {
+      pid_tunings_updated = false;
     }
-    if (pid_running == true){
-        Input = (double)ypr[1] * 180 / M_PI;
-        if (digitalRead(int_2) == 1){
-            Serial.println("PID off!");
-            long_pid->SetMode(MANUAL);
-            pid_running = false;
-        }
-    }
+  }
 
-    if (pid_tunings_updated == false) {
-        if (digitalRead(int_3) == 0) {
-            Kp = ((double)analogRead(pot_1)-1023)*10.0/(-1023.0);
-            Ki = ((double)analogRead(pot_2)-1023)*2.0/(-1023.0);
-            Kd = ((double)analogRead(pot_3)-1023)*6.0/(-1023.0);
-            Serial.print(Kp); Serial.print("\t");
-            Serial.print(Ki); Serial.print("\t");
-            Serial.print(Kd); Serial.print("\t");
-            Serial.println();
-            long_pid->SetTunings(Kp, Ki, Kd);
-            pid_tunings_updated = true;
-        }
+  double command;
+  if (pid_running == true)
+  {
+    long_pid->Compute();
+    if (Output != 0)
+    {
+      command = Output + LONG_MOTOR_DEAD_ZONE * Output / abs(Output);
     }
-    if (pid_tunings_updated == true) {
-        if (digitalRead(int_3) == 1) {
-            pid_tunings_updated = false;
-        }
-    }
-
-    double command;
-    if (pid_running == true){
-      long_pid->Compute();
-      if (Output != 0){
-          command = Output + LONG_MOTOR_DEAD_ZONE * Output/abs(Output);
-      }
-      roll(command);
-    }
-    if (digitalRead(int_1) == 0){
-          Serial.print(Output);
-          Serial.print("\t");
-          Serial.print(command);
-          Serial.println();
-      }
-
+    // roll(command);
+  }
+  if (digitalRead(int_1) == 0)
+  {
+    Serial.print(Input);
+    Serial.print("\t");
+    Serial.print(Output);
+    Serial.print("\t");
+    Serial.print(command);
+    Serial.println();
+  }
 }
 
 bool Droideka::receive_data()
@@ -556,7 +585,8 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
 
 ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 {
-  if (current_position == Droideka_Position(unparked)){
+  if (current_position == Droideka_Position(unparked))
+  {
     read_imu();
     calibrated_pitch = (double)ypr[1] * 180 / M_PI;
   }

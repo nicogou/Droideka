@@ -56,8 +56,8 @@ public:
     int8_t longitudinal_mot_pin_1;   // This pi and the following one are used to set the way the longitudinal motor spins.
     int8_t longitudinal_mot_pin_2;   // They can also be used to brake the motor.
     int8_t longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
-    double Setpoint, Input, Output;     // Define PID variables.
-    double Kp = 0, Ki = 0, Kd = 0;      // Define tuning parameters.
+    double Setpoint, Input, Output;  // Define PID variables.
+    double Kp = 1.0, Ki = 0, Kd = 0; // Define tuning parameters.
     PID *long_pid = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
     bool pid_running = false;
     bool pid_tunings_updated = false;
