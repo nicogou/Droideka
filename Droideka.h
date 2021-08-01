@@ -27,6 +27,7 @@ public:
     uint16_t min_voltage = 0;         // Holds the minimum input voltage of the servos in millivolts.
     uint16_t max_voltage = 0;         // Holds the maximum input voltage of the servos in millivolts.
     uint16_t servo_voltage[MOTOR_NB]; // Holds the input voltage of the servos in millivolts.
+    bool voltage_check = true;        // True if a voltage check is needed. False if not.
 
     const float hip_length = HIP_LENGTH;                          //L2 -> length from knee to horizontal axis of the hip.
     const float tibia_length = TIBIA_LENGTH;                      //L1 -> length from tip of the leg to knee.
