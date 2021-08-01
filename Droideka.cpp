@@ -246,11 +246,12 @@ void Droideka::compute_pid()
   {
     if (digitalRead(int_2) == 0)
     {
-      Setpoint = 20.0;
+      Setpoint = 0.0;
       Serial.println("PID on!");
       Serial.print("Input : ");
       Serial.print(Input);
       Serial.println("\t");
+      Output = 0;
       long_pid->SetMode(AUTOMATIC);
       pid_running = true;
     }
@@ -271,14 +272,14 @@ void Droideka::compute_pid()
   {
     if (digitalRead(int_3) == 0)
     {
-      Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
-      Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
-      Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
-      Serial.print(Kp);
+      // Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
+      // Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
+      // Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
+      Serial.print(long_pid->GetKp());
       Serial.print("\t");
-      Serial.print(Ki);
+      Serial.print(long_pid->GetKi());
       Serial.print("\t");
-      Serial.print(Kd);
+      Serial.print(long_pid->GetKd());
       Serial.print("\t");
       Serial.println();
       // long_pid->SetTunings(Kp, Ki, Kd);
@@ -301,7 +302,7 @@ void Droideka::compute_pid()
     {
       command = Output + LONG_MOTOR_DEAD_ZONE * Output / abs(Output);
     }
-    // roll(command);
+    roll(command);
   }
   if (digitalRead(int_1) == 0)
   {
