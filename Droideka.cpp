@@ -246,7 +246,6 @@ void Droideka::compute_pid()
   {
     if (digitalRead(int_2) == 0)
     {
-      Setpoint = 0.0;
       Serial.println("PID on!");
       Serial.print("Input : ");
       Serial.print(Input);
@@ -268,21 +267,31 @@ void Droideka::compute_pid()
     }
   }
 
+  Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
+  Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
+  Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
+
+  if (digitalRead(int_1) == 0)
+  {
+    Serial.print(Kp);
+    Serial.print("\t");
+    Serial.print(Ki);
+    Serial.print("\t");
+    Serial.print(Kd);
+    Serial.print("\t");
+    Serial.print(long_pid->GetKp());
+    Serial.print("\t");
+    Serial.print(long_pid->GetKi());
+    Serial.print("\t");
+    Serial.print(long_pid->GetKd());
+    Serial.print("\t");
+  }
+
   if (pid_tunings_updated == false)
   {
     if (digitalRead(int_3) == 0)
     {
-      // Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
-      // Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
-      // Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
-      Serial.print(long_pid->GetKp());
-      Serial.print("\t");
-      Serial.print(long_pid->GetKi());
-      Serial.print("\t");
-      Serial.print(long_pid->GetKd());
-      Serial.print("\t");
-      Serial.println();
-      // long_pid->SetTunings(Kp, Ki, Kd);
+      long_pid->SetTunings(Kp, Ki, Kd);
       pid_tunings_updated = true;
     }
   }
@@ -306,6 +315,8 @@ void Droideka::compute_pid()
   }
   if (digitalRead(int_1) == 0)
   {
+    Serial.print(Setpoint);
+    Serial.print("\t");
     Serial.print(Input);
     Serial.print("\t");
     Serial.print(Output);
