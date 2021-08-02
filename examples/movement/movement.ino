@@ -121,12 +121,10 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(10))
     {
-        Serial.println("Button 11");
         droid_1->Setpoint -= 10.0;
     }
     if (droid_1->droideka_rec->digitalFalling(11))
     {
-        Serial.println("Button 12");
         droid_1->Setpoint += 10.0;
     }
 
