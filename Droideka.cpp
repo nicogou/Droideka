@@ -675,6 +675,7 @@ ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
 
 ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
 {
+  delayed_function(NOTHING, 0);
   ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(parked), Droideka_Position(unparking), time), overwriting);
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
@@ -707,7 +708,7 @@ void Droideka::delayed_function()
 
 void Droideka::delayed_function(DelayedFunction f, int t)
 {
-  if (func == NOTHING)
+  if (func == NOTHING || f == NOTHING)
   {
     func = f;
     since_event = 0;
