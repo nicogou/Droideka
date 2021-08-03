@@ -232,76 +232,67 @@ void Droideka::initialize_pid()
 
 void Droideka::compute_pid()
 {
-  if (digitalRead(int_1) == 0)
-  {
-    // Serial.print("ypr\t");
-    // Serial.print(ypr[0] * 180 / M_PI);
-    // Serial.print("\t");
-    Serial.print(ypr[1] * 180 / M_PI);
-    // Serial.print("\t");
-    // Serial.print(ypr[2] * 180 / M_PI);
-    Serial.print("\t");
-  }
+  // if (digitalRead(int_1) == 0)
+  // {
+  // Serial.print("ypr\t");
+  // Serial.print(ypr[0] * 180 / M_PI);
+  // Serial.print("\t");
+  // Serial.print(ypr[1] * 180 / M_PI);
+  // Serial.print("\t");
+  // Serial.print(ypr[2] * 180 / M_PI);
+  // Serial.print("\t");
+  // }
   if (pid_running == false)
   {
-    if (digitalRead(int_2) == 0)
-    {
-      Serial.println("PID on!");
-      Serial.print("Input : ");
-      Serial.print(Input);
-      Serial.println("\t");
-      Output = 0;
-      long_pid->SetMode(AUTOMATIC);
-      pid_running = true;
-    }
+    // if (digitalRead(int_2) == 0)
+    // {
+    //   start_pid();
+    // }
   }
   if (pid_running == true)
   {
     Input = (double)ypr[1] * 180 / M_PI - calibrated_pitch;
-    if (digitalRead(int_2) == 1)
-    {
-      Serial.println("PID off!");
-      long_pid->SetMode(MANUAL);
-      roll(0);
-      pid_running = false;
-    }
+    // if (digitalRead(int_2) == 1)
+    // {
+    // stop_pid();
+    // }
   }
 
-  Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
-  Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
-  Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
+  // Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
+  // Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
+  // Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
 
-  if (digitalRead(int_1) == 0)
-  {
-    Serial.print(Kp);
-    Serial.print("\t");
-    Serial.print(Ki);
-    Serial.print("\t");
-    Serial.print(Kd);
-    Serial.print("\t");
-    Serial.print(long_pid->GetKp());
-    Serial.print("\t");
-    Serial.print(long_pid->GetKi());
-    Serial.print("\t");
-    Serial.print(long_pid->GetKd());
-    Serial.print("\t");
-  }
+  // if (digitalRead(int_1) == 0)
+  // {
+  //   Serial.print(Kp);
+  //   Serial.print("\t");
+  //   Serial.print(Ki);
+  //   Serial.print("\t");
+  //   Serial.print(Kd);
+  //   Serial.print("\t");
+  //   Serial.print(long_pid->GetKp());
+  //   Serial.print("\t");
+  //   Serial.print(long_pid->GetKi());
+  //   Serial.print("\t");
+  //   Serial.print(long_pid->GetKd());
+  //   Serial.print("\t");
+  // }
 
-  if (pid_tunings_updated == false)
-  {
-    if (digitalRead(int_3) == 0)
-    {
-      long_pid->SetTunings(Kp, Ki, Kd);
-      pid_tunings_updated = true;
-    }
-  }
-  if (pid_tunings_updated == true)
-  {
-    if (digitalRead(int_3) == 1)
-    {
-      pid_tunings_updated = false;
-    }
-  }
+  // if (pid_tunings_updated == false)
+  // {
+  //   if (digitalRead(int_3) == 0)
+  //   {
+  //     long_pid->SetTunings(Kp, Ki, Kd);
+  //     pid_tunings_updated = true;
+  //   }
+  // }
+  // if (pid_tunings_updated == true)
+  // {
+  //   if (digitalRead(int_3) == 1)
+  //   {
+  //     pid_tunings_updated = false;
+  //   }
+  // }
 
   double command;
   if (pid_running == true)
@@ -313,16 +304,38 @@ void Droideka::compute_pid()
     }
     roll(command);
   }
-  if (digitalRead(int_1) == 0)
+  // if (digitalRead(int_1) == 0)
+  // {
+  //   Serial.print(Setpoint);
+  //   Serial.print("\t");
+  //   Serial.print(Input);
+  //   Serial.print("\t");
+  //   Serial.print(Output);
+  //   Serial.print("\t");
+  //   Serial.print(command);
+  //   Serial.println();
+  // }
+}
+
+void Droideka::start_pid()
+{
+  if (pid_running == false)
   {
-    Serial.print(Setpoint);
-    Serial.print("\t");
-    Serial.print(Input);
-    Serial.print("\t");
-    Serial.print(Output);
-    Serial.print("\t");
-    Serial.print(command);
-    Serial.println();
+    Serial.println("PID on!");
+    Output = 0;
+    long_pid->SetMode(AUTOMATIC);
+    pid_running = true;
+  }
+}
+
+void Droideka::stop_pid()
+{
+  if (pid_running == true)
+  {
+    Serial.println("PID off!");
+    long_pid->SetMode(MANUAL);
+    roll(0);
+    pid_running = false;
   }
 }
 

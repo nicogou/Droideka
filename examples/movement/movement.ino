@@ -89,7 +89,15 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalFalling(4))
     {
-        droid_1->change_mode();
+        if (droid_1->Setpoint != 0)
+        {
+            droid_1->Setpoint = 0;
+        }
+        else
+        {
+            droid_1->stop_pid();
+            droid_1->change_mode();
+        }
     }
 
     if (droid_1->droideka_rec->digitalFalling(9))
@@ -121,11 +129,21 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(10))
     {
-        droid_1->Setpoint -= 10.0;
+        droid_1->Setpoint = -25.0;
+        droid_1->start_pid();
+    }
+    if (droid_1->droideka_rec->digitalRising(10))
+    {
+        droid_1->Setpoint = 0.0;
     }
     if (droid_1->droideka_rec->digitalFalling(11))
     {
-        droid_1->Setpoint += 10.0;
+        droid_1->Setpoint = 25.0;
+        droid_1->start_pid();
+    }
+    if (droid_1->droideka_rec->digitalRising(11))
+    {
+        droid_1->Setpoint = 0.0;
     }
 
     droid_1->next_movement();
