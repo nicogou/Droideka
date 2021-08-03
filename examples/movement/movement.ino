@@ -39,6 +39,7 @@ void loop()
     droid_1->check_voltage();
     droid_1->receive_data();
     Droideka_Position upked(droid_1->unparked);
+    Droideka_Position pked(droid_1->parked);
     droid_1->read_imu();
     droid_1->compute_pid();
     // if (droid_1->droideka_rec->analogThreshold_2D(0, 1, 200, SUP_OR_EQUAL))
@@ -68,11 +69,23 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalState(7))
     {
-        droid_1->set_movement(Droideka_Movement(upked, droid_1->droideka_rec->analog[1], droid_1->droideka_rec->analog[0], droid_1->droideka_rec->analog[3], droid_1->droideka_rec->analog[2], 500), true);
+        if (droid_1->current_position == pked)
+        {
+        }
+        else
+        {
+            droid_1->set_movement(Droideka_Movement(upked, droid_1->droideka_rec->analog[1], droid_1->droideka_rec->analog[0], droid_1->droideka_rec->analog[3], droid_1->droideka_rec->analog[2], 500), true);
+        }
     }
     if (droid_1->droideka_rec->digitalRising(7))
     {
-        droid_1->set_movement(Droideka_Movement(droid_1->current_position, upked, time_ms), true);
+        if (droid_1->current_position == pked)
+        {
+        }
+        else
+        {
+            droid_1->set_movement(Droideka_Movement(droid_1->current_position, upked, time_ms));
+        }
     }
     if (droid_1->droideka_rec->digitalFalling(3))
     {
