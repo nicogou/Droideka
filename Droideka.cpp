@@ -698,7 +698,6 @@ void Droideka::delayed_function()
     {
       if (func == DISABLE_SERVOS)
       {
-        Serial.println("yeepee");
         disable_enable_motors();
         func = NOTHING;
       }
