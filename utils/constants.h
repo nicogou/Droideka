@@ -42,7 +42,7 @@
 #define pot_1 39
 #define pot_2 40
 #define pot_3 41
-#define LONG_MOTOR_DEAD_ZONE 59
+#define LONG_MOTOR_DEAD_ZONE 50
 
 #define X_GYRO_OFFSET 0
 #define Y_GYRO_OFFSET 0
