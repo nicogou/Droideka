@@ -36,12 +36,12 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
     pinMode(led[ii], OUTPUT);
     digitalWrite(led[ii], 0);
   }
-  digitalWrite(led[info_led], 1);
 
   while (check_voltage() == SERVOS_VOLTAGE_TOO_LOW)
   {
     delay(1000);
   }
+  digitalWrite(led[info_led], 1);
 
   longitudinal_mot_pin_1 = l_m_p_1;
   longitudinal_mot_pin_pwm = l_m_p_pwm;
@@ -82,7 +82,6 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
       }
       ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
       Serial.println("Servo voltage too low");
-      digitalWrite(led[info_led], 0);
       digitalWrite(led[problem_led], 1);
       voltage_check = true;
       return result;
@@ -91,7 +90,6 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
     {
       voltage_check = false;
       digitalWrite(led[problem_led], 0);
-      digitalWrite(led[info_led], 1);
       return NO_ERROR;
     }
   }
