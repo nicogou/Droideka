@@ -14,6 +14,10 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareS
   droideka_rec = new Universal_Receiver(serial_receiver, btHardware);
   initialize_imu(imu_int_pin);
   initialize_pid();
+  digitalWrite(led[info_led], 0);
+  digitalWrite(led[ok_led], 1);
+  delay(2000);
+  digitalWrite(led[ok_led], 0);
 }
 
 void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_pwm)
@@ -32,6 +36,7 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
     pinMode(led[ii], OUTPUT);
     digitalWrite(led[ii], 0);
   }
+  digitalWrite(led[info_led], 1);
 
   while (check_voltage() == SERVOS_VOLTAGE_TOO_LOW)
   {
@@ -77,6 +82,7 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
       }
       ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
       Serial.println("Servo voltage too low");
+      digitalWrite(led[info_led], 0);
       digitalWrite(led[problem_led], 1);
       voltage_check = true;
       return result;
@@ -85,6 +91,7 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
     {
       voltage_check = false;
       digitalWrite(led[problem_led], 0);
+      digitalWrite(led[info_led], 1);
       return NO_ERROR;
     }
   }
@@ -114,20 +121,15 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
   Serial.println(F("Testing device connections..."));
   if (mpu.testConnection())
   {
-    digitalWrite(led[problem_led], 0);
-    digitalWrite(led[ok_led], 1);
     Serial.println(F("MPU6050 connection successful"));
   }
   else
   {
-    digitalWrite(led[ok_led], 0);
+    digitalWrite(led[info_led], 0);
     digitalWrite(led[problem_led], 1);
     Serial.println(F("MPU6050 connection failed"));
     return MPU_6050_CONNECTION_FAILED;
   }
-  delay(2000);
-  digitalWrite(led[ok_led], 0);
-  digitalWrite(led[problem_led], 0);
 
   // load and configure the DMP
   Serial.println(F("Initializing DMP..."));
@@ -166,6 +168,18 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
 
     // get expected DMP packet size for later comparison
     packetSize = mpu.dmpGetFIFOPacketSize();
+
+    float avg_pitch = 0;
+    int nb_measures = 5;
+    for (int ii = 0; ii < nb_measures; ii++)
+    {
+      read_imu();
+      avg_pitch += ypr[1] * 180 / M_PI;
+      delay(100);
+    }
+    avg_pitch = avg_pitch / nb_measures;
+    calibrated_pitch = avg_pitch;
+
     return NO_ERROR;
   }
   else
@@ -178,25 +192,10 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
     Serial.print(devStatus);
     Serial.println(F(")"));
 
-    digitalWrite(led[ok_led], 0);
+    digitalWrite(led[info_led], 0);
     digitalWrite(led[problem_led], 1);
     return MPU_6050_DMP_INIT_FAILED;
   }
-  delay(3000);
-
-  float avg_pitch = 0;
-  int nb_measures = 5;
-  for (int ii = 0; ii < nb_measures; ii++)
-  {
-    read_imu();
-    avg_pitch += ypr[1] * 180 / M_PI;
-    delay(100);
-  }
-  avg_pitch = avg_pitch / nb_measures;
-  calibrated_pitch = avg_pitch;
-
-  digitalWrite(led[ok_led], 0);
-  digitalWrite(led[problem_led], 0);
 }
 
 void Droideka::read_imu()
