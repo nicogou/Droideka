@@ -669,7 +669,7 @@ ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
   }
-
+  delayed_function(DISABLE_SERVOS, 3 * time); // disabling the servos after the parking position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
   return NO_ERROR;
 }
 
@@ -687,6 +687,38 @@ ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
   }
 
   return NO_ERROR;
+}
+
+void Droideka::delayed_function()
+{
+  if (func != NOTHING)
+  {
+    if (since_event > event_time_limit)
+    {
+      if (func == DISABLE_SERVOS)
+      {
+        Serial.println("yeepee");
+        disable_enable_motors();
+        func = NOTHING;
+      }
+    }
+  }
+}
+
+void Droideka::delayed_function(DelayedFunction f, int t)
+{
+  if (func == NOTHING)
+  {
+    func = f;
+    since_event = 0;
+    event_time_limit = t;
+  }
+  else
+  {
+    // If there is already a function running, we cannot erase it with a new one.
+    // We have to be able to handle several delayed functions -> using a table of DelayeFunction.
+    // Not needed for the moment but could be a future improvement.
+  }
 }
 
 ErrorCode Droideka::go_to_maintenance()

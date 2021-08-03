@@ -213,4 +213,5 @@ void loop()
 
     droid_1->next_movement();
     droid_1->keep_going();
+    droid_1->delayed_function();
 }

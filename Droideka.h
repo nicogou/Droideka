@@ -101,6 +101,12 @@ public:
     State lastServoState;
     State read_servos_positions();
 
+    void delayed_function();                         // If a function must be operated after a certain time after an event. Example : disabling the servos after parking.
+    void delayed_function(DelayedFunction f, int t); // Sets up the function to be operated after t ms.
+    DelayedFunction func = NOTHING;
+    elapsedMillis since_event;
+    int event_time_limit = 0;
+
     // GENERAL MOVEMENT OF THE ROBOT
     // ErrorCode move(int throttle); // Responds to remote control commands depending on the mode.
     DroidekaMode get_mode(); // Checks in what mode the robot currently is.
