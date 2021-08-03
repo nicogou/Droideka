@@ -114,8 +114,8 @@ public:
     void act(Action *action);                                                // Make the motors actually move.
 
     ErrorCode move_into_position(Droideka_Position pos, int time = 0);
-    ErrorCode park(int time = 1000);   // Parking routine
-    ErrorCode unpark(int time = 1000); // Unparking routine
+    ErrorCode park(int time = 1000, bool overwriting = false);   // Parking routine
+    ErrorCode unpark(int time = 1000, bool overwriting = false); // Unparking routine
     ErrorCode go_to_maintenance();
     // ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
     Droideka_Position get_current_position();

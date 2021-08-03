@@ -162,15 +162,7 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalFalling(4))
     {
-        if (droid_1->Setpoint != 0)
-        {
-            droid_1->Setpoint = 0;
-        }
-        else
-        {
-            droid_1->stop_pid();
-            droid_1->change_mode();
-        }
+        droid_1->change_mode();
     }
 
     if (droid_1->droideka_rec->digitalFalling(9))
