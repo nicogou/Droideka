@@ -11,6 +11,7 @@
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "Wire.h"
+#include "PID_v1.h"
 
 class Droideka
 {
@@ -26,6 +27,7 @@ public:
     uint16_t min_voltage = 0;         // Holds the minimum input voltage of the servos in millivolts.
     uint16_t max_voltage = 0;         // Holds the maximum input voltage of the servos in millivolts.
     uint16_t servo_voltage[MOTOR_NB]; // Holds the input voltage of the servos in millivolts.
+    bool voltage_check = true;        // True if a voltage check is needed. False if not.
 
     const float hip_length = HIP_LENGTH;                          //L2 -> length from knee to horizontal axis of the hip.
     const float tibia_length = TIBIA_LENGTH;                      //L1 -> length from tip of the leg to knee.
@@ -52,9 +54,15 @@ public:
     const int info_led = 2;
 
     // Longitudinal Motor
-    int8_t longitudinal_mot_pin_1;   // This pi and the following one are used to set the way the longitudinal motor spins.
-    int8_t longitudinal_mot_pin_2;   // They can also be used to brake the motor.
-    int8_t longitudinal_mot_pin_pwm; // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
+    int8_t longitudinal_mot_pin_1;                    // This pi and the following one are used to set the way the longitudinal motor spins.
+    int8_t longitudinal_mot_pin_2;                    // They can also be used to brake the motor.
+    int8_t longitudinal_mot_pin_pwm;                  // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
+    double Setpoint = 0.0, Input = 0.0, Output = 0.0; // Define PID variables.
+    double Kp = 3.0, Ki = 0, Kd = 0;                  // Define tuning parameters.
+    PID *long_pid = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+    bool pid_running = false;
+    bool pid_tunings_updated = false;
+    double calibrated_pitch = 0;
 
     // MPU6050
     // class default I2C address is 0x68
@@ -75,10 +83,14 @@ public:
     VectorFloat gravity; // [x, y, z]            gravity vector
     float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
-    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm, int8_t imu_int_pin);            // Class constructor.
-    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm, int8_t imu_int_pin); // Class constructor.
-    void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_2, int8_t l_m_p_pwm);                                                                                                   // Class initializer. Sets up motors.
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_pwm, int8_t imu_int_pin);            // Class constructor.
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_pwm, int8_t imu_int_pin); // Class constructor.
+    void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_pwm);                                                                                                   // Class initializer. Sets up motors.
     ErrorCode initialize_imu(int8_t imu_interrupt_pin);
+    void initialize_pid();
+    void compute_pid();
+    void start_pid();
+    void stop_pid();
     void read_imu();
     // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
     ErrorCode check_voltage(bool overwriting = false);
