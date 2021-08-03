@@ -708,7 +708,7 @@ void Droideka::delayed_function()
 
 void Droideka::delayed_function(DelayedFunction f, int t)
 {
-  if (func == NOTHING || f == NOTHING)
+  if (func == NOTHING || f == NOTHING) // If there are no functions already waiting, or if we need to remove the current delayed function.
   {
     func = f;
     since_event = 0;
