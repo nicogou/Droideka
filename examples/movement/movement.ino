@@ -79,14 +79,14 @@ void loop()
         x = 0.0;
         y = 0.0;
         z = 0.0;
-        alpha = 2.0;
+        alpha = 1.0;
     }
     if (droid_1->droideka_rec->digitalFalling(2))
     {
         x = 0.0;
         y = 0.0;
         z = 0.0;
-        alpha = -2.0;
+        alpha = -1.0;
     }
     if (start_move)
     {
@@ -118,14 +118,14 @@ void loop()
         x = 0.0;
         y = 0.0;
         z = 0.0;
-        alpha = 2.0;
+        alpha = 1.0;
     }
     if (droid_1->droideka_rec->digitalState(2))
     {
         x = 0.0;
         y = 0.0;
         z = 0.0;
-        alpha = -2.0;
+        alpha = -1.0;
     }
     if (continue_move)
     {

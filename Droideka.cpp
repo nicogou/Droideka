@@ -565,10 +565,13 @@ ErrorCode Droideka::change_mode()
       {
         Setpoint = 0;
       }
+      else
+      {
+        stop_pid();
+      }
     }
     else
     {
-      stop_pid();
       unpark();
     }
   }
