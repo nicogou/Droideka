@@ -7,6 +7,13 @@ enum DroidekaMode
 };
 typedef enum DroidekaMode DroidekaMode;
 
+enum DelayedFunction
+{
+    NOTHING = 0,
+    DISABLE_SERVOS = 1,
+};
+typedef enum DelayedFunction DelayedFunction;
+
 enum ErrorCode
 {
     WAITING = 0,

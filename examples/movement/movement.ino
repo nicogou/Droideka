@@ -7,6 +7,9 @@ Droideka *droid_1;
 
 int16_t thresholds[NB_MAX_DATA];
 int time_ms = 1000;
+int time_step = 5000;
+float x = 0.0, y = 0.0, z = 0.0, alpha = 0.0;
+bool start_move = false, continue_move = false, finish_move = false;
 float trans_x[TIME_SAMPLE];
 float trans_y[TIME_SAMPLE];
 float trans_z[TIME_SAMPLE];
@@ -51,15 +54,85 @@ void loop()
     // {
     //     droid_1->next_movement_sequence(FINISHING_SEQUENCE);
     // }
+    if (droid_1->droideka_rec->digitalFalling(0) || droid_1->droideka_rec->digitalFalling(1) || droid_1->droideka_rec->digitalFalling(2) || droid_1->droideka_rec->digitalFalling(3))
+    {
+        start_move = true;
+        continue_move = false;
+        finish_move = false;
+    }
+    if (droid_1->droideka_rec->digitalFalling(3))
+    {
+        x = 2.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = 0.0;
+    }
+    if (droid_1->droideka_rec->digitalFalling(1))
+    {
+        x = -2.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = 0.0;
+    }
     if (droid_1->droideka_rec->digitalFalling(0))
     {
-        droid_1->set_movement(Droideka_Movement(upked, (float)0.0, (float)0.0, (float)0.0, (float)2.0, 7500));
+        x = 0.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = 1.0;
+    }
+    if (droid_1->droideka_rec->digitalFalling(2))
+    {
+        x = 0.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = -1.0;
+    }
+    if (start_move)
+    {
+        droid_1->set_movement(Droideka_Movement(upked, x, y, z, alpha, time_step));
+        start_move = false;
+    }
+    if (droid_1->droideka_rec->digitalState(0) || droid_1->droideka_rec->digitalState(1) || droid_1->droideka_rec->digitalState(2) || droid_1->droideka_rec->digitalState(3))
+    {
+        start_move = false;
+        continue_move = true;
+        finish_move = false;
+    }
+    if (droid_1->droideka_rec->digitalState(3))
+    {
+        x = 2.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = 0.0;
+    }
+    if (droid_1->droideka_rec->digitalState(1))
+    {
+        x = -2.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = 0.0;
     }
     if (droid_1->droideka_rec->digitalState(0))
     {
-        droid_1->next_movement_sequence(INTERMEDIATE_SEQUENCE, (float)0.0, (float)0.0, (float)2.0);
+        x = 0.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = 1.0;
     }
-    if (droid_1->droideka_rec->digitalRising(0))
+    if (droid_1->droideka_rec->digitalState(2))
+    {
+        x = 0.0;
+        y = 0.0;
+        z = 0.0;
+        alpha = -1.0;
+    }
+    if (continue_move)
+    {
+        droid_1->next_movement_sequence(INTERMEDIATE_SEQUENCE, x, y, alpha);
+        continue_move = false;
+    }
+    if (droid_1->droideka_rec->digitalRising(0) || droid_1->droideka_rec->digitalRising(1) || droid_1->droideka_rec->digitalRising(2) || droid_1->droideka_rec->digitalRising(3))
     {
         droid_1->next_movement_sequence(FINISHING_SEQUENCE);
     }
@@ -87,30 +160,9 @@ void loop()
             droid_1->set_movement(Droideka_Movement(droid_1->current_position, upked, time_ms));
         }
     }
-    if (droid_1->droideka_rec->digitalFalling(3))
-    {
-        droid_1->stop_movement();
-    }
-    if (droid_1->droideka_rec->digitalFalling(1))
-    {
-        droid_1->set_movement(Droideka_Movement(droid_1->current_position, upked, time_ms));
-    }
-    if (droid_1->droideka_rec->digitalFalling(2))
-    {
-        Droideka_Position unparking_(droid_1->unparking);
-        droid_1->set_movement(Droideka_Movement(droid_1->current_position, unparking_, time_ms));
-    }
     if (droid_1->droideka_rec->digitalFalling(4))
     {
-        if (droid_1->Setpoint != 0)
-        {
-            droid_1->Setpoint = 0;
-        }
-        else
-        {
-            droid_1->stop_pid();
-            droid_1->change_mode();
-        }
+        droid_1->change_mode();
     }
 
     if (droid_1->droideka_rec->digitalFalling(9))
@@ -161,4 +213,5 @@ void loop()
 
     droid_1->next_movement();
     droid_1->keep_going();
+    droid_1->delayed_function();
 }
