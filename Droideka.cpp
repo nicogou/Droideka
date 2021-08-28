@@ -803,8 +803,19 @@ ErrorCode Droideka::next_movement()
       ErrorCode volts = check_voltage(true);
       if (volts == SERVOS_VOLTAGE_TOO_LOW)
       {
-        movement.finished = true;
+        if (movement.seq == STARTING_SEQUENCE)
+        {
+          movement.finished = true;
+        }
+        else
+        {
+          movement.paused = true;
+        }
         return volts;
+      }
+      else if (volts == NO_ERROR)
+      {
+        movement.paused = false;
       }
     }
     movement.next_position = movement.get_future_position(movement.start_position, 0);
