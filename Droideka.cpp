@@ -856,7 +856,7 @@ ErrorCode Droideka::next_movement()
         movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
       }
       move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter] - now) / 1000);
-      current_position.print_position("Current Position " + String(movement.iter));
+      // current_position.print_position("Current Position " + String(movement.iter));
       movement.next_pos_calc = false;
       movement.iter++;
     }
