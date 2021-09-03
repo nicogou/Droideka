@@ -4,6 +4,7 @@ enum DroidekaMode
 {
     WALKING = 0,
     ROLLING = 1,
+    MAINTENANCE,
 };
 typedef enum DroidekaMode DroidekaMode;
 

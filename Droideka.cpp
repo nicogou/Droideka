@@ -525,6 +525,10 @@ float Droideka::encoder_to_deg(int8_t motor_id, int32_t encoder_angle)
 
 DroidekaMode Droideka::get_mode()
 {
+  if (current_position == Droideka_Position(maintenance_pos))
+  {
+    return MAINTENANCE;
+  }
   Droideka_Position curr = get_current_position();
   bool test = 1;
   for (int8_t ii = 0; ii < LEG_NB; ii++)
@@ -544,6 +548,10 @@ DroidekaMode Droideka::get_mode()
 ErrorCode Droideka::change_mode()
 {
   DroidekaMode mode = get_mode();
+  if (mode == MAINTENANCE)
+  {
+    move_into_position(Droideka_Position(parked), 2000);
+  }
   if (mode == WALKING)
   {
     bool over = false;
@@ -724,6 +732,7 @@ ErrorCode Droideka::go_to_maintenance()
 {
   Droideka_Position maintenance_(maintenance_pos);
   ErrorCode result = set_movement(Droideka_Movement(current_position, maintenance_, 2000));
+  delayed_function(DISABLE_SERVOS, 2500); // disabling the servos after the maintenance position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
 
   return result;
 }
