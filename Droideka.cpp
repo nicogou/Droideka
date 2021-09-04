@@ -73,7 +73,7 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
     }
     avg_voltage = tmp / MOTOR_NB;
 
-    if (min_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
+    if (max_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
     {
       disable_enable_motors();
       ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;

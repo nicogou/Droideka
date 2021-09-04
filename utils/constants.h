@@ -6,7 +6,7 @@
 #define TIBIA_LENGTH 8
 #define HIP_LENGTH 8
 #define BODY_LENGTH 11.0 // TODO: verifier la valeur
-#define BODY_WIDTH 11.0 // TODO: verifier la valeur
+#define BODY_WIDTH 11.0  // TODO: verifier la valeur
 #define TIME_SAMPLE 88
 #define MAX_LONGITUDINAL_COG_MOVE BODY_LENGTH / 10
 #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
@@ -28,7 +28,7 @@
 
 #define SERVO_BUS_WRITE_PIN 13
 
-#define SERVOS_UNDER_VOLTAGE_LIMIT 7400
+#define SERVOS_UNDER_VOLTAGE_LIMIT 7500
 #define VOLTAGE_CHECK_TIMER 120000
 #define VOLTAGE_CHECK_TIMER_HIGH_FREQ 1000
 
