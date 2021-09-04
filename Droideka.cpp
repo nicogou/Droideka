@@ -73,11 +73,11 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
     }
     avg_voltage = tmp / MOTOR_NB;
 
-    if (max_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
+    if (min_voltage < 4500 || max_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
     {
       disable_enable_motors();
       ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
-      Serial.println("Servo voltage too low");
+      Serial.println("Servo voltage too low. Minimum: " + String(min_voltage) + " - Maximum: " + String(max_voltage));
       digitalWrite(led[problem_led], 1);
       voltage_check_timer = VOLTAGE_CHECK_TIMER_HIGH_FREQ;
       return result;
