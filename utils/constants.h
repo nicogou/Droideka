@@ -7,7 +7,7 @@
 #define HIP_LENGTH 8
 #define BODY_LENGTH 11.0 // TODO: verifier la valeur
 #define BODY_WIDTH 11.0  // TODO: verifier la valeur
-#define TIME_SAMPLE 88
+#define TIME_SAMPLE 98
 #define MAX_LONGITUDINAL_COG_MOVE BODY_LENGTH / 10
 #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
 #define MAX_ANGLE_COG_MOVE 1

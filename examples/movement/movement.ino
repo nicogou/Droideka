@@ -7,7 +7,7 @@ Droideka *droid_1;
 
 int16_t thresholds[NB_MAX_DATA];
 int time_ms = 1000;
-int time_step = 4000;
+int time_step = 2500;
 float x = 0.0, y = 0.0, z = 0.0, alpha = 0.0;
 bool start_move = false, continue_move = false, finish_move = false;
 float trans_x[TIME_SAMPLE];
