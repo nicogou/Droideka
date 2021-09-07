@@ -1,6 +1,7 @@
 #define DEBUG_BOARD_BAUD_RATE 115200
 
 #define MOTOR_NB 12
+#define MOTOR_LONG_NB 13
 #define SERVO_DEG_RATIO 0.01
 #define LEG_NB 4
 #define TIBIA_LENGTH 8

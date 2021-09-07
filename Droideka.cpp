@@ -26,7 +26,7 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
   servoBus.debug(false);
   servoBus.retry = 0;
 
-  for (int8_t ii = 0; ii < MOTOR_NB; ii++)
+  for (int8_t ii = 0; ii < MOTOR_LONG_NB; ii++)
   {
     servos[ii] = new LX16AServo(&servoBus, ii);
   }
@@ -42,12 +42,6 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
   }
   digitalWrite(led[info_led], 1);
 
-  longitudinal_mot_pin_1 = l_m_p_1;
-  longitudinal_mot_pin_pwm = l_m_p_pwm;
-
-  pinMode(longitudinal_mot_pin_1, OUTPUT);
-  pinMode(longitudinal_mot_pin_pwm, OUTPUT);
-
   movement.finished = true;
 }
 
@@ -58,7 +52,7 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
     sinceVoltageCheck = 0;
     uint32_t tmp = 0;
     min_voltage = 9000;
-    for (int8_t ii = 0; ii < MOTOR_NB; ii++)
+    for (int8_t ii = 0; ii < MOTOR_LONG_NB; ii++)
     {
       servo_voltage[ii] = servos[ii]->vin();
       tmp += servo_voltage[ii];
@@ -71,7 +65,7 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
         min_voltage = servo_voltage[ii];
       }
     }
-    avg_voltage = tmp / MOTOR_NB;
+    avg_voltage = tmp / MOTOR_LONG_NB;
 
     if (min_voltage < 4500 || max_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
     {
@@ -398,25 +392,11 @@ bool Droideka::receive_data()
 
 ErrorCode Droideka::roll(int speed = 0)
 {
-  // int pin_1 = longitudinal_mot_pin_1;
-  // int pin_pwm = longitudinal_mot_pin_pwm;
-
-  // // Choose forward or backward motion
-  if (speed >= 0)
-  {
-    digitalWrite(longitudinal_mot_pin_1, 1);
-  }
-  else if (speed < 0)
-  {
-    digitalWrite(longitudinal_mot_pin_1, 0);
-  }
-
-  int mapped_speed = abs(speed);
-  mapped_speed = map(mapped_speed, 0, 100, 0, 255);
+  int mapped_speed = map(speed, -100, 100, -1000, 1000);
   // Choose speed
-  if (mapped_speed >= 0 && mapped_speed < 256)
+  if (mapped_speed >= -1000 && mapped_speed <= 1000)
   {
-    analogWrite(longitudinal_mot_pin_pwm, mapped_speed);
+    servos[MOTOR_LONG_NB - 1]->motor_mode(mapped_speed);
   }
   else
   {
@@ -428,10 +408,23 @@ ErrorCode Droideka::roll(int speed = 0)
 
 void Droideka::disable_enable_motors()
 {
+  for (int ii = 0; ii < MOTOR_LONG_NB; ii++)
+  {
+    servos[ii]->disable();
+  }
+}
+
+void Droideka::disable_leg_motors()
+{
   for (int ii = 0; ii < MOTOR_NB; ii++)
   {
     servos[ii]->disable();
   }
+}
+
+void Droideka::disable_long_motor()
+{
+  servos[MOTOR_LONG_NB - 1]->disable();
 }
 
 State Droideka::read_servos_positions()
@@ -676,7 +669,7 @@ ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
   }
-  delayed_function(DISABLE_SERVOS, 3 * time); // disabling the servos after the parking position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
+  delayed_function(DISABLE_LEG_SERVOS, 3 * time); // disabling the servos after the parking position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
   return NO_ERROR;
 }
 
@@ -693,6 +686,7 @@ ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
   }
+  delayed_function(DISABLE_LONG_SERVOS, 3 * time); // disabling the long servo after the unparkied position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
 
   return NO_ERROR;
 }
@@ -706,6 +700,16 @@ void Droideka::delayed_function()
       if (func == DISABLE_SERVOS)
       {
         disable_enable_motors();
+        func = NOTHING;
+      }
+      else if (func == DISABLE_LEG_SERVOS)
+      {
+        disable_leg_motors();
+        func = NOTHING;
+      }
+      else if (func == DISABLE_LONG_SERVOS)
+      {
+        disable_long_motor();
         func = NOTHING;
       }
     }
