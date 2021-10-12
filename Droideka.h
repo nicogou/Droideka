@@ -21,12 +21,14 @@ public:
 
     // Create a ServoBus instance for the debug Board
     LX16ABus servoBus;
-    LX16AServo *servos[MOTOR_NB];
+    LX16AServo *servos[MOTOR_LONG_NB];
     void disable_enable_motors();
+    void disable_leg_motors();
+    void disable_long_motor();
     uint16_t avg_voltage = 0;                                    // Holds the average input voltage of the servos in millivolts.
     uint16_t min_voltage = 0;                                    // Holds the minimum input voltage of the servos in millivolts.
     uint16_t max_voltage = 0;                                    // Holds the maximum input voltage of the servos in millivolts.
-    uint16_t servo_voltage[MOTOR_NB];                            // Holds the input voltage of the servos in millivolts.
+    uint16_t servo_voltage[MOTOR_LONG_NB];                       // Holds the input voltage of the servos in millivolts.
     int32_t voltage_check_timer = VOLTAGE_CHECK_TIMER_HIGH_FREQ; // holds the time between voltage checks.
 
     const float hip_length = HIP_LENGTH;                          //L2 -> length from knee to horizontal axis of the hip.
@@ -42,7 +44,7 @@ public:
     int32_t motors_angle_encoder[LEG_NB][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; // Id 0 stores the shoudler angle, Id 1 the Hip angle, Id 2 the Knee angle. All in encoder counts.
 
     // Motor ids for the Droideka legs
-    const unsigned int motor_ids[MOTOR_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    const unsigned int motor_ids[MOTOR_LONG_NB] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
     // IDs 0, 1 and 2 represent the front left leg
     // IDs 3, 4 and 5 represent the front right leg
     // IDs 6, 7 and 8 represent the rear left leg

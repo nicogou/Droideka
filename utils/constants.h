@@ -1,6 +1,7 @@
 #define DEBUG_BOARD_BAUD_RATE 115200
 
 #define MOTOR_NB 12
+#define MOTOR_LONG_NB 13
 #define SERVO_DEG_RATIO 0.01
 #define LEG_NB 4
 #define TIBIA_LENGTH 8
@@ -43,7 +44,7 @@
 #define pot_1 39
 #define pot_2 40
 #define pot_3 41
-#define LONG_MOTOR_DEAD_ZONE 50
+#define LONG_MOTOR_DEAD_ZONE 20
 
 #define X_GYRO_OFFSET 0
 #define Y_GYRO_OFFSET 0
