@@ -210,11 +210,7 @@ void Droideka::initialize_pid()
   pinMode(pot_2, INPUT);
   pinMode(pot_3, INPUT);
   long_pid->SetOutputLimits(LONG_MOTOR_DEAD_ZONE - 100, 100 - LONG_MOTOR_DEAD_ZONE);
-  Kp = ((double)analogRead(pot_1) - 1023) * 10.0 / (-1023.0);
-  Ki = ((double)analogRead(pot_2) - 1023) * 2.0 / (-1023.0);
-  Kd = ((double)analogRead(pot_3) - 1023) * 6.0 / (-1023.0);
-  Serial.println("Kp:" + String(Kp) + " Ki:" + String(Ki) + " Kd:" + String(Kd));
-  // long_pid->SetTunings(Kp, Ki, Kd);
+  //Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
 }
 
 void Droideka::compute_pid()
@@ -289,7 +285,7 @@ void Droideka::compute_pid()
     {
       command = Output + LONG_MOTOR_DEAD_ZONE * Output / abs(Output);
     }
-    roll(command);
+    roll(-command);
   }
   // if (digitalRead(int_1) == 0)
   // {
