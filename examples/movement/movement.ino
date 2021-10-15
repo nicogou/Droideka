@@ -172,7 +172,11 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(6))
     {
-        droid_1->disable_enable_motors();
+        // droid_1->disable_enable_motors();
+    }
+    if (droid_1->droideka_rec->digitalState(6))
+    {
+        droid_1->trot(250);
     }
 
     if (droid_1->droideka_rec->digitalFalling(12))

@@ -210,7 +210,7 @@ void Droideka::initialize_pid()
   pinMode(pot_2, INPUT);
   pinMode(pot_3, INPUT);
   long_pid->SetOutputLimits(LONG_MOTOR_DEAD_ZONE - 100, 100 - LONG_MOTOR_DEAD_ZONE);
-  //Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
+  // Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
 }
 
 void Droideka::compute_pid()
@@ -377,7 +377,7 @@ bool Droideka::receive_data()
       // If we printed something, we go to the next line for the next batch of data.
       if (droideka_rec->isUpdated.bluetooth() || droideka_rec->isUpdated.hardware())
       {
-        //Serial.println();
+        // Serial.println();
         return true;
       }
     }
@@ -685,6 +685,60 @@ ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
   delayed_function(DISABLE_LONG_SERVOS, 3 * time); // disabling the long servo after the unparkied position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
 
   return NO_ERROR;
+}
+
+ErrorCode Droideka::trot(unsigned long time)
+{
+  Droideka_Position temp = Droideka_Position(unparked);
+  float dist = 4.0;
+  ErrorCode result;
+
+  temp.move_leg(0, 0.0, dist / 4, 3.0).move_leg(3, 0.0, dist / 4, 3.0);
+  temp.move_leg(1, 0.0, -dist / 4, 0.0).move_leg(2, 0.0, -dist / 4, 0.0);
+  if (movement.started == false || movement.finished == true)
+  {
+    result = set_movement(Droideka_Movement(Droideka_Position(unparked), temp, time / 2));
+    if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
+    {
+      return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+    }
+  }
+  else
+  {
+    movement.add_position(temp, temp, time / 2);
+    // result = add_position(temp, time / 2);
+    // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+    // {
+    //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+    // }
+  }
+
+  temp.move_leg(0, 0.0, dist / 4, -3.0).move_leg(3, 0.0, dist / 4, -3.0);
+  temp.move_leg(1, 0.0, -dist / 4, 0.0).move_leg(2, 0.0, -dist / 4, 0.0);
+  movement.add_position(temp, temp, time / 2);
+  // result = add_position(temp, time / 2);
+  // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+  // {
+  //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  // }
+
+  temp.move_leg(0, 0.0, -dist / 4, 0.0).move_leg(3, 0.0, -dist / 4, 0.0);
+  temp.move_leg(1, 0.0, dist / 4, 3.0).move_leg(2, 0.0, dist / 4, 3.0);
+  movement.add_position(temp, temp, time / 2);
+  // result = add_position(temp, time / 2);
+  // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+  // {
+  //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  // }
+
+  temp.move_leg(0, 0.0, -dist / 4, 0.0).move_leg(3, 0.0, -dist / 4, 0.0);
+  temp.move_leg(1, 0.0, dist / 4, -3.0).move_leg(2, 0.0, dist / 4, -3.0);
+  movement.add_position(temp, temp, time / 2);
+  // result = add_position(temp, time / 2);
+  // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+  // {
+  //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+  // }
 }
 
 void Droideka::delayed_function()
