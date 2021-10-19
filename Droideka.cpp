@@ -16,7 +16,7 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareS
   initialize_pid();
   digitalWrite(led[info_led], 0);
   digitalWrite(led[ok_led], 1);
-  delay(2000);
+  delay(1000);
   digitalWrite(led[ok_led], 0);
 }
 
@@ -210,7 +210,7 @@ void Droideka::initialize_pid()
   pinMode(pot_2, INPUT);
   pinMode(pot_3, INPUT);
   long_pid->SetOutputLimits(LONG_MOTOR_DEAD_ZONE - 100, 100 - LONG_MOTOR_DEAD_ZONE);
-  //Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
+  // Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
 }
 
 void Droideka::compute_pid()
@@ -377,7 +377,7 @@ bool Droideka::receive_data()
       // If we printed something, we go to the next line for the next batch of data.
       if (droideka_rec->isUpdated.bluetooth() || droideka_rec->isUpdated.hardware())
       {
-        //Serial.println();
+        // Serial.println();
         return true;
       }
     }
@@ -539,7 +539,8 @@ ErrorCode Droideka::change_mode()
   DroidekaMode mode = get_mode();
   if (mode == MAINTENANCE)
   {
-    move_into_position(Droideka_Position(parked), 2000);
+    set_movement(Droideka_Movement(Droideka_Position(maintenance_pos), Droideka_Position(parked), 2000));
+    delayed_function(DISABLE_LEG_SERVOS, 3000); // disabling the servos after the parking position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
   }
   if (mode == WALKING)
   {
@@ -671,7 +672,7 @@ ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
 
 ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
 {
-  delayed_function(NOTHING, 0);
+  // delayed_function(NOTHING, 0);
   ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(parked), Droideka_Position(unparking), time), overwriting);
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
@@ -730,6 +731,7 @@ void Droideka::delayed_function(DelayedFunction f, int t)
 
 ErrorCode Droideka::go_to_maintenance()
 {
+  // delayed_function(NOTHING, 0);
   Droideka_Position maintenance_(maintenance_pos);
   ErrorCode result = set_movement(Droideka_Movement(current_position, maintenance_, 2000));
   delayed_function(DISABLE_SERVOS, 2500); // disabling the servos after the maintenance position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
@@ -807,7 +809,7 @@ ErrorCode Droideka::next_movement()
 {
   if (movement.started == false && movement.finished == false)
   {
-    if (movement.type != CENTER_OF_GRAVITY_TRAJ)
+    if (movement.type != COG_TRAJ)
     {
       ErrorCode volts = check_voltage(true);
       if (volts == SERVOS_VOLTAGE_TOO_LOW)
@@ -843,6 +845,10 @@ ErrorCode Droideka::next_movement()
     unsigned long now = micros();
     if (now - movement.start >= movement.time_span)
     {
+      if (!(current_position == movement.end_position))
+      {
+        move_into_position(movement.end_position, 0.0);
+      }
       movement.finished = true;
       return NO_ERROR;
     }
@@ -884,6 +890,7 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
   if (overwriting)
   {
     movement = mvmt;
+    delayed_function(NOTHING, 0);
     return NO_ERROR;
   }
   else
@@ -894,6 +901,7 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
       {
         movement = mvmt;
         digitalWrite(led[info_led], 0);
+        delayed_function(NOTHING, 0);
         return NO_ERROR;
       }
       else
@@ -909,11 +917,11 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
   }
 }
 
-ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time, int8_t one_leg = -1)
+ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time)
 {
   if (movement.started == false || movement.finished == true)
   {
-    movement.add_position(current_position, pos, time, one_leg);
+    movement.add_position(pos, time);
     return NO_ERROR;
   }
   else
@@ -941,7 +949,7 @@ ErrorCode Droideka::keep_going()
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 {
-  if (movement.type == ROBOT_TRAJ && movement.finished == false)
+  if ((movement.type == STABLE_GAIT || movement.type == TROT_GAIT) && movement.finished == false)
   {
     movement.next_seq = ms;
     return NO_ERROR;
@@ -950,7 +958,7 @@ ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang)
 {
-  if (movement.type == ROBOT_TRAJ && movement.finished == false)
+  if ((movement.type == STABLE_GAIT || movement.type == TROT_GAIT) && movement.finished == false)
   {
     movement.next_seq = ms;
     movement.next_longitudinal = next_long;

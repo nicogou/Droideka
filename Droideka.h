@@ -31,8 +31,8 @@ public:
     uint16_t servo_voltage[MOTOR_LONG_NB];                       // Holds the input voltage of the servos in millivolts.
     int32_t voltage_check_timer = VOLTAGE_CHECK_TIMER_HIGH_FREQ; // holds the time between voltage checks.
 
-    const float hip_length = HIP_LENGTH;                          //L2 -> length from knee to horizontal axis of the hip.
-    const float tibia_length = TIBIA_LENGTH;                      //L1 -> length from tip of the leg to knee.
+    const float hip_length = HIP_LENGTH;                          // L2 -> length from knee to horizontal axis of the hip.
+    const float tibia_length = TIBIA_LENGTH;                      // L1 -> length from tip of the leg to knee.
     const float servo_deg_ratio = SERVO_DEG_RATIO;                // Multiplier to go from servo encoder to degrees value.
     int32_t deg_to_encoder(int8_t motor_id, float deg_angle);     // Calculates the value to feed the motor from an angle value in degrees to encoder counts
     float encoder_to_deg(int8_t motor_id, int32_t encoder_angle); // Calculates the angle value in degrees from an angle value in encoder counts
@@ -131,7 +131,7 @@ public:
     ErrorCode next_movement();
     ErrorCode stop_movement();
     ErrorCode pause_movement(bool pause = true);
-    ErrorCode add_position(Droideka_Position pos, unsigned long time, int8_t one_leg = -1);
+    ErrorCode add_position(Droideka_Position pos, unsigned long time);
     ErrorCode keep_going();
     ErrorCode next_movement_sequence(MovementSequence ms);
     ErrorCode next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang);
