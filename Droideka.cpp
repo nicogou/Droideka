@@ -16,7 +16,7 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareS
   initialize_pid();
   digitalWrite(led[info_led], 0);
   digitalWrite(led[ok_led], 1);
-  delay(2000);
+  delay(1000);
   digitalWrite(led[ok_led], 0);
 }
 
@@ -539,7 +539,8 @@ ErrorCode Droideka::change_mode()
   DroidekaMode mode = get_mode();
   if (mode == MAINTENANCE)
   {
-    move_into_position(Droideka_Position(parked), 2000);
+    set_movement(Droideka_Movement(Droideka_Position(maintenance_pos), Droideka_Position(parked), 2000));
+    delayed_function(DISABLE_LEG_SERVOS, 3000); // disabling the servos after the parking position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
   }
   if (mode == WALKING)
   {
@@ -671,7 +672,7 @@ ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
 
 ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
 {
-  delayed_function(NOTHING, 0);
+  // delayed_function(NOTHING, 0);
   ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(parked), Droideka_Position(unparking), time), overwriting);
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
@@ -685,60 +686,6 @@ ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
   delayed_function(DISABLE_LONG_SERVOS, 3 * time); // disabling the long servo after the unparkied position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
 
   return NO_ERROR;
-}
-
-ErrorCode Droideka::trot(unsigned long time)
-{
-  Droideka_Position temp = Droideka_Position(unparked);
-  float dist = 4.0;
-  ErrorCode result;
-
-  temp.move_leg(0, 0.0, dist / 4, 3.0).move_leg(3, 0.0, dist / 4, 3.0);
-  temp.move_leg(1, 0.0, -dist / 4, 0.0).move_leg(2, 0.0, -dist / 4, 0.0);
-  if (movement.started == false || movement.finished == true)
-  {
-    result = set_movement(Droideka_Movement(Droideka_Position(unparked), temp, time / 2));
-    if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
-    {
-      return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
-    }
-  }
-  else
-  {
-    movement.add_position(temp, time / 2);
-    // result = add_position(temp, time / 2);
-    // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
-    // {
-    //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
-    // }
-  }
-
-  temp.move_leg(0, 0.0, dist / 4, -3.0).move_leg(3, 0.0, dist / 4, -3.0);
-  temp.move_leg(1, 0.0, -dist / 4, 0.0).move_leg(2, 0.0, -dist / 4, 0.0);
-  movement.add_position(temp, time / 2);
-  // result = add_position(temp, time / 2);
-  // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
-  // {
-  //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
-  // }
-
-  temp.move_leg(0, 0.0, -dist / 4, 0.0).move_leg(3, 0.0, -dist / 4, 0.0);
-  temp.move_leg(1, 0.0, dist / 4, 3.0).move_leg(2, 0.0, dist / 4, 3.0);
-  movement.add_position(temp, time / 2);
-  // result = add_position(temp, time / 2);
-  // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
-  // {
-  //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
-  // }
-
-  temp.move_leg(0, 0.0, -dist / 4, 0.0).move_leg(3, 0.0, -dist / 4, 0.0);
-  temp.move_leg(1, 0.0, dist / 4, -3.0).move_leg(2, 0.0, dist / 4, -3.0);
-  movement.add_position(temp, time / 2);
-  // result = add_position(temp, time / 2);
-  // if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
-  // {
-  //   return MOVING_THUS_UNABLE_TO_ADD_POSITION;
-  // }
 }
 
 void Droideka::delayed_function()
@@ -784,6 +731,7 @@ void Droideka::delayed_function(DelayedFunction f, int t)
 
 ErrorCode Droideka::go_to_maintenance()
 {
+  // delayed_function(NOTHING, 0);
   Droideka_Position maintenance_(maintenance_pos);
   ErrorCode result = set_movement(Droideka_Movement(current_position, maintenance_, 2000));
   delayed_function(DISABLE_SERVOS, 2500); // disabling the servos after the maintenance position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
@@ -897,6 +845,10 @@ ErrorCode Droideka::next_movement()
     unsigned long now = micros();
     if (now - movement.start >= movement.time_span)
     {
+      if (!(current_position == movement.end_position))
+      {
+        move_into_position(movement.end_position, 0.0);
+      }
       movement.finished = true;
       return NO_ERROR;
     }
@@ -926,7 +878,7 @@ ErrorCode Droideka::next_movement()
         movement.next_position = movement.get_future_position(movement.start_position, movement.iter);
       }
       move_into_position(movement.next_position, (movement.start + movement.time_iter[movement.iter] - now) / 1000);
-      current_position.print_position("Current Position " + String(movement.iter));
+      // current_position.print_position("Current Position " + String(movement.iter));
       movement.next_pos_calc = false;
       movement.iter++;
     }
@@ -938,6 +890,7 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
   if (overwriting)
   {
     movement = mvmt;
+    delayed_function(NOTHING, 0);
     return NO_ERROR;
   }
   else
@@ -948,6 +901,7 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
       {
         movement = mvmt;
         digitalWrite(led[info_led], 0);
+        delayed_function(NOTHING, 0);
         return NO_ERROR;
       }
       else
@@ -995,7 +949,7 @@ ErrorCode Droideka::keep_going()
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 {
-  if (movement.type == STABLE_GAIT && movement.finished == false)
+  if ((movement.type == STABLE_GAIT || movement.type == TROT_GAIT) && movement.finished == false)
   {
     movement.next_seq = ms;
     return NO_ERROR;
@@ -1004,7 +958,7 @@ ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang)
 {
-  if (movement.type == STABLE_GAIT && movement.finished == false)
+  if ((movement.type == STABLE_GAIT || movement.type == TROT_GAIT) && movement.finished == false)
   {
     movement.next_seq = ms;
     movement.next_longitudinal = next_long;

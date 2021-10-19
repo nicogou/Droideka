@@ -136,8 +136,6 @@ public:
     ErrorCode next_movement_sequence(MovementSequence ms);
     ErrorCode next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang);
 
-    ErrorCode trot(unsigned long time);
-
     const float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING},
