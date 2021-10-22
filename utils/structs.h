@@ -2,9 +2,10 @@
 
 enum DroidekaMode
 {
-    WALKING = 0,
-    ROLLING = 1,
-    MAINTENANCE,
+    UNDEFINED = 0,
+    WALKING = 1,
+    ROLLING = 2,
+    MAINTENANCE = 3,
 };
 typedef enum DroidekaMode DroidekaMode;
 

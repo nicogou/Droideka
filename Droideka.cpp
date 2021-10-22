@@ -466,23 +466,30 @@ float Droideka::encoder_to_deg(int8_t motor_id, int32_t encoder_angle)
 
 DroidekaMode Droideka::get_mode()
 {
-  if (current_position == Droideka_Position(maintenance_pos))
+  if (current_mode == UNDEFINED)
   {
-    return MAINTENANCE;
-  }
-  Droideka_Position curr = get_current_position();
-  bool test = 1;
-  for (int8_t ii = 0; ii < LEG_NB; ii++)
-  {
-    test = test * (curr.legs[ii][2] >= Y_NOT_TOUCHING);
-  }
-  if (test)
-  {
-    return ROLLING;
+    if (current_position == Droideka_Position(maintenance_pos))
+    {
+      return MAINTENANCE;
+    }
+    Droideka_Position curr = get_current_position();
+    bool test = 1;
+    for (int8_t ii = 0; ii < LEG_NB; ii++)
+    {
+      test = test * (curr.legs[ii][2] >= Y_NOT_TOUCHING);
+    }
+    if (test)
+    {
+      return ROLLING;
+    }
+    else
+    {
+      return WALKING;
+    }
   }
   else
   {
-    return WALKING;
+    return current_mode;
   }
 }
 
@@ -493,6 +500,7 @@ ErrorCode Droideka::change_mode()
   {
     set_movement(Droideka_Movement(Droideka_Position(maintenance_pos), Droideka_Position(parked), 2000));
     delayed_function(DISABLE_LEG_SERVOS, 3000); // disabling the servos after the parking position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
+    current_mode = ROLLING;
   }
   if (mode == WALKING)
   {
@@ -502,6 +510,7 @@ ErrorCode Droideka::change_mode()
       over = true;
     }
     park(1000, over);
+    current_mode = ROLLING;
   }
   else if (mode == ROLLING)
   {
@@ -519,6 +528,7 @@ ErrorCode Droideka::change_mode()
     if (!pid_running)
     {
       unpark();
+      current_mode = WALKING;
     }
   }
   return NO_ERROR;
@@ -686,7 +696,7 @@ ErrorCode Droideka::go_to_maintenance()
   Droideka_Position maintenance_(maintenance_pos);
   ErrorCode result = set_movement(Droideka_Movement(current_position, maintenance_, 2000));
   delayed_function(DISABLE_SERVOS, 2500); // disabling the servos after the maintenance position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
-
+  current_mode = MAINTENANCE;
   return result;
 }
 
