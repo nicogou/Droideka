@@ -209,8 +209,8 @@ void Droideka::initialize_pid()
   pinMode(pot_1, INPUT);
   pinMode(pot_2, INPUT);
   pinMode(pot_3, INPUT);
-  long_pid->SetOutputLimits(LONG_MOTOR_DEAD_ZONE - 100, 100 - LONG_MOTOR_DEAD_ZONE);
-  long_pid->SetSampleTime(10);
+  long_pid->SetOutputLimits(-100, 100);
+  long_pid->SetSampleTime(PID_SAMPLE_TIME);
   // Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
 }
 
@@ -232,20 +232,13 @@ void Droideka::compute_pid()
   // }
 
   double command;
-  float val = 0.0;
   if (pid_running == true)
   {
     if (long_pid->Compute())
     {
-      if (Output <= -val || Output >= val)
-      {
-        command = Output + LONG_MOTOR_DEAD_ZONE * Output / abs(Output);
-      }
-      else
-      {
-        command = 0;
-      }
+      command = Output;
       roll(-command);
+
       Serial.print(Setpoint);
       Serial.print("\t");
       Serial.print(Input);
@@ -277,6 +270,7 @@ void Droideka::stop_pid()
     long_pid->SetMode(MANUAL);
     roll(0);
     pid_running = false;
+    delayed_function(DISABLE_LONG_SERVOS, 500);
   }
 }
 
@@ -522,7 +516,7 @@ ErrorCode Droideka::change_mode()
         stop_pid();
       }
     }
-    else
+    if (!pid_running)
     {
       unpark();
     }
@@ -641,7 +635,6 @@ ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
   {
     return MOVING_THUS_UNABLE_TO_ADD_POSITION;
   }
-  delayed_function(DISABLE_LONG_SERVOS, 3 * time); // disabling the long servo after the unparkied position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
 
   return NO_ERROR;
 }

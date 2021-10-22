@@ -44,7 +44,8 @@
 #define pot_1 39
 #define pot_2 40
 #define pot_3 41
-#define LONG_MOTOR_DEAD_ZONE 0 // 20
+#define LONG_MOTOR_DEAD_ZONE 20
+#define PID_SAMPLE_TIME 10
 
 #define X_GYRO_OFFSET 0
 #define Y_GYRO_OFFSET 0
