@@ -110,7 +110,8 @@ public:
     int event_time_limit = 0;
 
     // GENERAL MOVEMENT OF THE ROBOT
-    // ErrorCode move(int throttle); // Responds to remote control commands depending on the mode.
+    ErrorCode move(float x, float y, float z, float alpha); // Responds to remote control commands depending on the mode.
+    DroidekaMode current_mode = UNDEFINED;
     DroidekaMode get_mode(); // Checks in what mode the robot currently is.
     ErrorCode change_mode(); // Goes from walking to rolling mode and vice-versa.
 

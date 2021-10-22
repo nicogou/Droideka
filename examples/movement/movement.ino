@@ -66,9 +66,12 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalFalling(0) || droid_1->droideka_rec->digitalFalling(1) || droid_1->droideka_rec->digitalFalling(2) || droid_1->droideka_rec->digitalFalling(3))
     {
-        start_move = true;
-        continue_move = false;
-        finish_move = false;
+        if (droid_1->current_mode == WALKING)
+        {
+            start_move = true;
+            continue_move = false;
+            finish_move = false;
+        }
     }
     if (start_move)
     {
@@ -84,9 +87,12 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalState(0) || droid_1->droideka_rec->digitalState(1) || droid_1->droideka_rec->digitalState(2) || droid_1->droideka_rec->digitalState(3))
     {
-        start_move = false;
-        continue_move = true;
-        finish_move = false;
+        if (droid_1->current_mode == WALKING)
+        {
+            start_move = false;
+            continue_move = true;
+            finish_move = false;
+        }
     }
     if (continue_move)
     {
@@ -95,7 +101,10 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalRising(0) || droid_1->droideka_rec->digitalRising(1) || droid_1->droideka_rec->digitalRising(2) || droid_1->droideka_rec->digitalRising(3))
     {
-        droid_1->next_movement_sequence(FINISHING_SEQUENCE);
+        if (droid_1->current_mode == WALKING)
+        {
+            droid_1->next_movement_sequence(FINISHING_SEQUENCE);
+        }
     }
     if (droid_1->droideka_rec->digitalFalling(5))
     {
@@ -133,21 +142,21 @@ void loop()
         droid_1->roll(0);
     }
 
-    if (droid_1->droideka_rec->digitalFalling(10))
+    if (droid_1->droideka_rec->digitalFalling(1) && droid_1->current_mode == ROLLING)
     {
         droid_1->Setpoint = -pid_set;
         droid_1->start_pid();
     }
-    if (droid_1->droideka_rec->digitalRising(10))
+    if (droid_1->droideka_rec->digitalRising(1) && droid_1->current_mode == ROLLING)
     {
         droid_1->Setpoint = 0.0;
     }
-    if (droid_1->droideka_rec->digitalFalling(11))
+    if (droid_1->droideka_rec->digitalFalling(3) && droid_1->current_mode == ROLLING)
     {
         droid_1->Setpoint = pid_set;
         droid_1->start_pid();
     }
-    if (droid_1->droideka_rec->digitalRising(11))
+    if (droid_1->droideka_rec->digitalRising(3) && droid_1->current_mode == ROLLING)
     {
         droid_1->Setpoint = 0.0;
     }
