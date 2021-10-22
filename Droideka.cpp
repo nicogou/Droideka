@@ -138,7 +138,7 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
     mpu.CalibrateAccel(6);
     mpu.CalibrateGyro(6);
     Serial.println();
-    mpu.PrintActiveOffsets();
+    // mpu.PrintActiveOffsets();
     // turn on the DMP, now that it's ready
     Serial.println(F("Enabling DMP..."));
     mpu.setDMPEnabled(true);
@@ -210,49 +210,19 @@ void Droideka::initialize_pid()
   pinMode(pot_2, INPUT);
   pinMode(pot_3, INPUT);
   long_pid->SetOutputLimits(LONG_MOTOR_DEAD_ZONE - 100, 100 - LONG_MOTOR_DEAD_ZONE);
+  long_pid->SetSampleTime(10);
   // Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
 }
 
 void Droideka::compute_pid()
 {
-  // if (digitalRead(int_1) == 0)
-  // {
-  // Serial.print("ypr\t");
-  // Serial.print(ypr[0] * 180 / M_PI);
-  // Serial.print("\t");
-  // Serial.print(ypr[1] * 180 / M_PI);
-  // Serial.print("\t");
-  // Serial.print(ypr[2] * 180 / M_PI);
-  // Serial.print("\t");
-  // }
-  if (pid_running == false)
-  {
-    // if (digitalRead(int_2) == 0)
-    // {
-    //   start_pid();
-    // }
-  }
   if (pid_running == true)
   {
     Input = (double)ypr[1] * 180 / M_PI - calibrated_pitch;
-    // if (digitalRead(int_2) == 1)
-    // {
-    // stop_pid();
-    // }
   }
 
-  // Kp = ((double)analogRead(pot_1) - 1023.0) * 10.0 / (-1023.0);
-  // Ki = ((double)analogRead(pot_2) - 1023.0) * 2.0 / (-1023.0);
-  // Kd = ((double)analogRead(pot_3) - 1023.0) * 6.0 / (-1023.0);
-
-  // if (digitalRead(int_1) == 0)
+  // if (pid_running == true)
   // {
-  //   Serial.print(Kp);
-  //   Serial.print("\t");
-  //   Serial.print(Ki);
-  //   Serial.print("\t");
-  //   Serial.print(Kd);
-  //   Serial.print("\t");
   //   Serial.print(long_pid->GetKp());
   //   Serial.print("\t");
   //   Serial.print(long_pid->GetKi());
@@ -261,43 +231,31 @@ void Droideka::compute_pid()
   //   Serial.print("\t");
   // }
 
-  // if (pid_tunings_updated == false)
-  // {
-  //   if (digitalRead(int_3) == 0)
-  //   {
-  //     long_pid->SetTunings(Kp, Ki, Kd);
-  //     pid_tunings_updated = true;
-  //   }
-  // }
-  // if (pid_tunings_updated == true)
-  // {
-  //   if (digitalRead(int_3) == 1)
-  //   {
-  //     pid_tunings_updated = false;
-  //   }
-  // }
-
   double command;
+  float val = 0.0;
   if (pid_running == true)
   {
-    long_pid->Compute();
-    if (Output != 0)
+    if (long_pid->Compute())
     {
-      command = Output + LONG_MOTOR_DEAD_ZONE * Output / abs(Output);
+      if (Output <= -val || Output >= val)
+      {
+        command = Output + LONG_MOTOR_DEAD_ZONE * Output / abs(Output);
+      }
+      else
+      {
+        command = 0;
+      }
+      roll(-command);
+      Serial.print(Setpoint);
+      Serial.print("\t");
+      Serial.print(Input);
+      // Serial.print("\t");
+      // Serial.print(Output);
+      // Serial.print("\t");
+      // Serial.print(command);
+      Serial.println();
     }
-    roll(-command);
   }
-  // if (digitalRead(int_1) == 0)
-  // {
-  //   Serial.print(Setpoint);
-  //   Serial.print("\t");
-  //   Serial.print(Input);
-  //   Serial.print("\t");
-  //   Serial.print(Output);
-  //   Serial.print("\t");
-  //   Serial.print(command);
-  //   Serial.println();
-  // }
 }
 
 void Droideka::start_pid()

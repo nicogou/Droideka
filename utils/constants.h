@@ -16,8 +16,8 @@
 #define Y_TOUCHING -10.0
 #define Y_NOT_TOUCHING -6.0
 #define Y_ZERO -7.0     // A vérifier
-#define THETA_IDLE 45.0 //0.0 // A vérifier
-#define X_IDLE 6.5      //5.0     // A vérifier
+#define THETA_IDLE 45.0 // 0.0 // A vérifier
+#define X_IDLE 6.5      // 5.0     // A vérifier
 
 #define Y_MAINTENANCE 0.0                       // Maintenance
 #define THETA_MAINTENANCE 0.0                   // Maintenance
@@ -44,7 +44,7 @@
 #define pot_1 39
 #define pot_2 40
 #define pot_3 41
-#define LONG_MOTOR_DEAD_ZONE 20
+#define LONG_MOTOR_DEAD_ZONE 0 // 20
 
 #define X_GYRO_OFFSET 0
 #define Y_GYRO_OFFSET 0

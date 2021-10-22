@@ -7,10 +7,11 @@ Droideka *droid_1;
 
 int16_t thresholds[NB_MAX_DATA];
 int time_ms = 1000;
-int time_step = 2500;
+int time_step = 1500;
 int time_trot = 300;
 float x = 0.0, y = 0.0, z = 0.0, alpha = 0.0;
 bool start_move = false, continue_move = false, finish_move = false;
+float pid_set = 25.0;
 
 void setup()
 {
@@ -21,6 +22,7 @@ void setup()
 
     Serial.begin(9600);
     droid_1 = new Droideka(&Serial8, 35, &Serial2, thresholds, BT_HW_HC05, LMP1, LMP_PWM, IMU_INT_PIN);
+    // droid_1->long_pid->SetTunings(4.0, 0.0, 0.0);
 
     Serial.println("Start");
     Serial.println();
@@ -133,7 +135,7 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(10))
     {
-        droid_1->Setpoint = -25.0;
+        droid_1->Setpoint = -pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(10))
@@ -142,7 +144,7 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalFalling(11))
     {
-        droid_1->Setpoint = 25.0;
+        droid_1->Setpoint = pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(11))
