@@ -1,6 +1,4 @@
 #include <Droideka.h>
-#define LMP1 3
-#define LMP_PWM 4
 #define IMU_INT_PIN 24
 
 Droideka *droid_1;
@@ -21,7 +19,7 @@ void setup()
     }
 
     Serial.begin(9600);
-    droid_1 = new Droideka(&Serial8, 35, &Serial2, thresholds, BT_HW_HC05, LMP1, LMP_PWM, IMU_INT_PIN);
+    droid_1 = new Droideka(&Serial8, 35, &Serial2, thresholds, BT_HW_HC05, IMU_INT_PIN);
     // droid_1->long_pid->SetTunings(4.0, 0.0, 0.0);
 
     Serial.println("Start");
@@ -144,7 +142,7 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(1) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = -pid_set;
+        droid_1->Setpoint = pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(1) && droid_1->current_mode == ROLLING)
@@ -153,7 +151,7 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalFalling(3) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = pid_set;
+        droid_1->Setpoint = -pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(3) && droid_1->current_mode == ROLLING)

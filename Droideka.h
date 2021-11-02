@@ -55,10 +55,7 @@ public:
     const int ok_led = 1;
     const int info_led = 2;
 
-    // Longitudinal Motor
-    int8_t longitudinal_mot_pin_1;                    // This pi and the following one are used to set the way the longitudinal motor spins.
-    int8_t longitudinal_mot_pin_2;                    // They can also be used to brake the motor.
-    int8_t longitudinal_mot_pin_pwm;                  // This pin is used to send PWM commands to the longitudinal motor and thus set the speed
+    // Longitudinal Motor PID
     double Setpoint = 0.0, Input = 0.0, Output = 0.0; // Define PID variables.
     double Kp = 4.0, Ki = 0.0, Kd = 0.0;              // Define tuning parameters.
     PID *long_pid = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
@@ -85,84 +82,86 @@ public:
     VectorFloat gravity; // [x, y, z]            gravity vector
     float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
-    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_pwm, int8_t imu_int_pin);            // Class constructor.
-    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t l_m_p_1, int8_t l_m_p_pwm, int8_t imu_int_pin); // Class constructor.
-    void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_pwm);                                                                                                   // Class initializer. Sets up motors.
-    ErrorCode initialize_imu(int8_t imu_interrupt_pin);
-    void initialize_pid();
-    void compute_pid();
-    void start_pid();
-    void stop_pid();
-    void read_imu();
-    // Not all pins on the Mega and Mega 2560 support change interrupts, so only the following can be used for RX: 10, 11, 12, 13, 14, 15, 50, 51, 52, 53, A8 (62), A9 (63), A10 (64), A11 (65), A12 (66), A13 (67), A14 (68), A15 (69).
-    ErrorCode check_voltage(bool overwriting = false);
-    elapsedMillis sinceVoltageCheck;
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin);            // Class constructor.
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin); // Class constructor.
+
+    void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos); // Starts the Bluetooth controller and servo bus communication.
+    ErrorCode initialize_imu(int8_t imu_interrupt_pin);                  // Starts i2c communication with MPU6050
+    void read_imu();                                                     // Reads IMU data and stores it in ypr[]
+    void initialize_pid();                                               // Starts the PID controller
+    void compute_pid();                                                  // Calculates PID Output for the longitudinal motor
+    void start_pid();                                                    // Starts the PID when needed
+    void stop_pid();                                                     // Stops the PID when needed
+    ErrorCode check_voltage(bool overwriting = false);                   // Checks battery voltage : on startup, before a Movement is done, and when a significant amounf of time has passed.
+    elapsedMillis sinceVoltageCheck;                                     // Timer since last voltage check.
 
     // REMOTE CONTROL AND RECEIVER-RELATED FUNCTIONS
-    bool receive_data(); // Receives data from receiver.
-    State lastServoState;
-    State read_servos_positions();
+    bool receive_data();           // Receives data from Bluetooth controller.
+    State lastServoState;          // Stores the last known state of the servos.
+    State read_servos_positions(); // Reads the servo positions.
 
-    void delayed_function();                         // If a function must be operated after a certain time after an event. Example : disabling the servos after parking.
-    void delayed_function(DelayedFunction f, int t); // Sets up the function to be operated after t ms.
-    DelayedFunction func = NOTHING;
-    elapsedMillis since_event;
-    int event_time_limit = 0;
+    void delayed_function();                         // Checks if a function must be operated after a certain time after an event. Example : disabling the leg servos after parking.
+    void delayed_function(DelayedFunction f, int t); // Sets up the function f to be operated after t ms.
+    DelayedFunction func = NOTHING;                  // Delayed function to be operated. Nothing at startup.
+    elapsedMillis since_event;                       // Timer for a delayed function
+    int event_time_limit = 0;                        // Store time when a delayed function has to be operated.
 
     // GENERAL MOVEMENT OF THE ROBOT
-    ErrorCode move(float x, float y, float z, float alpha); // Responds to remote control commands depending on the mode.
-    DroidekaMode current_mode = UNDEFINED;
-    DroidekaMode get_mode(); // Checks in what mode the robot currently is.
-    ErrorCode change_mode(); // Goes from walking to rolling mode and vice-versa.
+    DroidekaMode current_mode = UNDEFINED; // Current mode. UNDEFINED at startup before get_mode is called for the first time.
+    DroidekaMode get_mode();               // Checks in what mode the robot currently is.
+    ErrorCode change_mode();               // Handmes mode switching : Maintenance, walking or rolling.
 
     // ROLLING MODE
-    ErrorCode roll(int speed = 0); // Longitudinal movement of the robot.
+    ErrorCode roll(int speed = 0); // Makes longitudinal motor move to a speed between -100 and 100.
 
     // WALKING MODE
     ErrorCode in_position(Droideka_Position pos, Action &pos_act, int time); // Checks if the wanted position is reachable given the mechanical constraints of the robot.
-    void act(Action *action);                                                // Make the motors actually move.
+    void act(Action *action);                                                // Sends move commands to the leg servos.
 
-    ErrorCode move_into_position(Droideka_Position pos, int time = 0);
-    ErrorCode park(int time = 1000, bool overwriting = false);   // Parking routine
-    ErrorCode unpark(int time = 1000, bool overwriting = false); // Unparking routine
-    ErrorCode go_to_maintenance();
-    // ErrorCode walk(int throttle_x, int throttle_y, unsigned long time = 8000000); // Walking routine (time in seconds)
-    Droideka_Position get_current_position();
-    ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);
-    ErrorCode next_movement();
-    ErrorCode stop_movement();
-    ErrorCode pause_movement(bool pause = true);
-    ErrorCode add_position(Droideka_Position pos, unsigned long time);
-    ErrorCode keep_going();
-    ErrorCode next_movement_sequence(MovementSequence ms);
-    ErrorCode next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang);
+    ErrorCode move_into_position(Droideka_Position pos, int time = 0); // Moves into a Droideka_Position in time ms.
+    ErrorCode park(int time = 1000, bool overwriting = false);         // Parking routine
+    ErrorCode unpark(int time = 1000, bool overwriting = false);       // Unparking routine
+    ErrorCode go_to_maintenance();                                     // Going to Maintenance position routine
 
+    Droideka_Position get_current_position();                                                               // Read servo position to get current position. Not super-duper precise so seldom used.
+    ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);                               // Sets up a Droideka_Movement for the robot to operate.
+    ErrorCode next_movement();                                                                              // Determines at which point of the Droideka_Movement we are and moves accordingly.
+    ErrorCode stop_movement();                                                                              // Stops movement. No resuming possible. This is only a software stop !
+    ErrorCode pause_movement(bool pause = true);                                                            // Pauses movement. It can be resumed.
+    ErrorCode add_position(Droideka_Position pos, unsigned long time);                                      // Adds a position to the Droideka_Movement. Used only if D_Movement is of SEQUENCE type.
+    ErrorCode keep_going();                                                                                 // Calls the keep_going function of class D_Movement to see if the steps continue. That only happens in STABLE_GAIT and TROT_GAIT Droideka_Movement types.
+    ErrorCode next_movement_sequence(MovementSequence ms);                                                  // In STABLE_GAIT or TROT_GAIT Movement types, indicates if the steps continue or stops.
+    ErrorCode next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang); // Same as above but with different direction.
+
+    // Holds values for the parked position
     const float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING}};
+    // Holds values for the trnaisiton position between parking and unparking
     const float unparking[LEG_NB][3] = {
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING}};
+    // Holds values for the unparked position
     const float unparked[LEG_NB][3] = {
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING}};
-
+    // Holds values for the maintenance position
     const float maintenance_pos[LEG_NB][3] = {
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE}};
 
-    Droideka_Position current_position = Droideka_Position(parked);
+    Droideka_Position current_position = Droideka_Position(parked); // Stores the last position sent to the servos.
 
     // The following holds the minimum, middle and maximum values possible for the motors due to mechanical constraints.
-    // The last parameter on each line represents the way of reading the encoder values (90degrees is maximum or minimum encoder counts value).
+    // The last parameter on each line represents the way of reading the encoder values (90 degrees is maximum or minimum encoder counts value).
     const int32_t extreme_values_motor[MOTOR_NB][4] = {
         {2520, 11520, 20520, 1},
         {7480, 12000, 22800, -1},
@@ -179,7 +178,7 @@ public:
     };
 
 private:
-    Droideka_Movement movement;
+    Droideka_Movement movement; // Holds the Droideka_Movement to be opearted by the robot. This stores information about Center of Gravity's trajectory, precise legs movement etc.
 };
 
 #endif

@@ -1,16 +1,41 @@
 #include "Droideka.h"
 
-Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_pwm, int8_t imu_int_pin)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t imu_int_pin)
 {
-  initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_pwm);
+  /* Initializes the Droideka.
+   *
+   * Use only if SoftwareSerial is used to communicate with the Bluetooth Receiver.
+   * Should not be used with a Teensy mocrocontroller as there are plenty of Hardware serials.
+   *
+   *  serial_servos : Serial Port used to communicate with the LX-16A servos.
+   * tXpin_servos : TX pin of the Serial port to be used in open drain mode.
+   * rx, tx : towards bluetooth receiver
+   * thresh : Holds the threshold for the Universal_Receiver lib
+   * btHardware : which version of BT receiver you use. specified in Universal_Receiver lib
+   */
+  initialize(serial_servos, tXpin_servos);
   droideka_rec = new Universal_Receiver(rx, tx, btHardware);
   initialize_imu(imu_int_pin);
   initialize_pid();
+  digitalWrite(led[info_led], 0);
+  digitalWrite(led[ok_led], 1);
+  delay(1000);
+  digitalWrite(led[ok_led], 0);
 }
 
-Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t l_m_p_1, int8_t l_m_p_pwm, int8_t imu_int_pin)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t imu_int_pin)
 {
-  initialize(serial_servos, tXpin_servos, l_m_p_1, l_m_p_pwm);
+  /* Initializes the Droideka.
+   *
+   * Use only if a hardware Serial port is used to communicate with the Bluetooth Receiver.
+   *
+   * serial_servos : Serial Port used to communicate with the LX-16A servos.
+   * tXpin_servos : TX pin of the Serial port to be used in open drain mode.
+   * serial_receiver : towards bluetooth receiver
+   * thresh : Holds the threshold for the Universal_Receiver lib
+   * btHardware : which version of BT receiver you use. specified in Universal_Receiver lib
+   */
+  initialize(serial_servos, tXpin_servos);
   droideka_rec = new Universal_Receiver(serial_receiver, btHardware);
   initialize_imu(imu_int_pin);
   initialize_pid();
@@ -20,8 +45,13 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareS
   digitalWrite(led[ok_led], 0);
 }
 
-void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t l_m_p_1, int8_t l_m_p_pwm)
+void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
 {
+  /* Initializes the Servos and LED. Also checks battery voltage.
+   *
+   * serial_servos : Serial Port used to communicate with the LX-16A servos.
+   * tXpin_servos : TX pin of the Serial port to be used in open drain mode.
+   */
   servoBus.begin(serial_servos, tXpin_servos);
   servoBus.debug(false);
   servoBus.retry = 0;
@@ -47,6 +77,10 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos, in
 
 ErrorCode Droideka::check_voltage(bool overwriting = false)
 {
+  /* Battery Voltage checking function. If the battery is low we increase the frequency of the voltag checks.
+   *
+   * overwriting : true if you want to perform a voltage check immediately.
+   */
   if (overwriting || sinceVoltageCheck >= voltage_check_timer)
   {
     sinceVoltageCheck = 0;
@@ -85,18 +119,21 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
   }
 }
 
-// ================================================================
-// ===               INTERRUPT DETECTION ROUTINE                ===
-// ================================================================
-
 volatile bool mpuInterrupt = false; // indicates whether MPU interrupt pin has gone high
 inline void dmp_Data_Ready()
 {
+  /* Indicates if IMU data is ready.
+   */
   mpuInterrupt = true;
 }
 
 ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
 {
+  /* Initializes the IMU.
+   * Almost a copy-paste from examples in MPU6050 (I2C-Dev) lib.
+   *
+   * imu_interrupt_pin : Teensy pin connected to the MPU6050 INT pin.
+   */
   Wire.begin();
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
 
@@ -188,6 +225,9 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
 
 void Droideka::read_imu()
 {
+  /* Reads the IMU data.
+   * Almost a copy-paste from examples in MPU6050 (I2C-Dev) lib.
+   */
   // if programming failed, don't try to do anything
   if (!dmpReady)
     return;
@@ -203,12 +243,8 @@ void Droideka::read_imu()
 
 void Droideka::initialize_pid()
 {
-  pinMode(int_1, INPUT_PULLUP);
-  pinMode(int_2, INPUT_PULLUP);
-  pinMode(int_3, INPUT_PULLUP);
-  pinMode(pot_1, INPUT);
-  pinMode(pot_2, INPUT);
-  pinMode(pot_3, INPUT);
+  /* Initializes the PID.
+   */
   long_pid->SetOutputLimits(-100, 100);
   long_pid->SetSampleTime(PID_SAMPLE_TIME);
   // Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
@@ -216,6 +252,8 @@ void Droideka::initialize_pid()
 
 void Droideka::compute_pid()
 {
+  /* Computes PID Output for longitudinal motor stabilization.
+   */
   if (pid_running == true)
   {
     Input = (double)ypr[1] * 180 / M_PI - calibrated_pitch;
@@ -253,6 +291,8 @@ void Droideka::compute_pid()
 
 void Droideka::start_pid()
 {
+  /* Puts PID controller in working mode.
+   */
   if (pid_running == false)
   {
     Serial.println("PID on!");
@@ -264,6 +304,8 @@ void Droideka::start_pid()
 
 void Droideka::stop_pid()
 {
+  /* Stops PID controller from computing.
+   */
   if (pid_running == true)
   {
     Serial.println("PID off!");
@@ -276,6 +318,8 @@ void Droideka::stop_pid()
 
 bool Droideka::receive_data()
 {
+  /* Receives data from bluetooth controller.
+   */
   if (droideka_rec->state())
   {
     if (droideka_rec->receivedData())
@@ -340,6 +384,10 @@ bool Droideka::receive_data()
 
 ErrorCode Droideka::roll(int speed = 0)
 {
+  /* Commands the longitudinal motor to go to a specific speed
+   *
+   * speed : the desired motor speed. Between -100 and 100. Negative values make the motor turn backwards.
+   */
   int mapped_speed = map(speed, -100, 100, -1000, 1000);
   // Choose speed
   if (mapped_speed >= -1000 && mapped_speed <= 1000)
@@ -356,6 +404,8 @@ ErrorCode Droideka::roll(int speed = 0)
 
 void Droideka::disable_enable_motors()
 {
+  /* Disables all servos (legs and longitudinal)
+   */
   for (int ii = 0; ii < MOTOR_LONG_NB; ii++)
   {
     servos[ii]->disable();
@@ -364,6 +414,8 @@ void Droideka::disable_enable_motors()
 
 void Droideka::disable_leg_motors()
 {
+  /* Disable all leg servos
+   */
   for (int ii = 0; ii < MOTOR_NB; ii++)
   {
     servos[ii]->disable();
@@ -372,11 +424,16 @@ void Droideka::disable_leg_motors()
 
 void Droideka::disable_long_motor()
 {
+  /* Disables the longitudinal motor
+   */
   servos[MOTOR_LONG_NB - 1]->disable();
 }
 
 State Droideka::read_servos_positions()
 {
+  /* Reads the last Servo State
+   * It will be in encoder values.
+   */
   lastServoState.timestamp = millis();
   for (int8_t ii = 0; ii < MOTOR_NB; ii++)
   {
@@ -392,6 +449,10 @@ State Droideka::read_servos_positions()
 
 void Droideka::act(Action *action)
 {
+  /* Makes the robot move the position asked
+   *
+   * action : This holds the desired position and time span in which to do the move.
+   */
   for (int8_t ii = 0; ii < MOTOR_NB; ii++)
   {
     if (action->activate[ii] > 0)
@@ -407,7 +468,10 @@ void Droideka::act(Action *action)
 
 ErrorCode Droideka::encode_leg_angles(int8_t leg_id)
 {
-
+  /* Checks if the encoder value of each motor is compatible with extremum mechanical values.
+   *
+   * leg_id : the leg for which to perform the calculations
+   */
   for (int8_t jj = 0; jj < 3; jj++)
   {
     motors_angle_encoder[leg_id][jj] = deg_to_encoder(3 * leg_id + jj, motors_angle_deg[leg_id][jj]);
@@ -431,6 +495,11 @@ ErrorCode Droideka::encode_leg_angles(int8_t leg_id)
 
 int32_t Droideka::deg_to_encoder(int8_t motor_id, float deg_angle)
 {
+  /* Goes from angle values in degrees to encoder counts.
+   *
+   * motor_id : The specific motor.
+   * deg_angle : the angle in degree to convert.
+   */
   int32_t encoder_angle;
   encoder_angle = extreme_values_motor[motor_id][1] + extreme_values_motor[motor_id][3] * (int32_t)(deg_angle / servo_deg_ratio);
 
@@ -439,33 +508,24 @@ int32_t Droideka::deg_to_encoder(int8_t motor_id, float deg_angle)
 
 float Droideka::encoder_to_deg(int8_t motor_id, int32_t encoder_angle)
 {
+  /* Goes from angle values in encoder counts to degrees.
+   *
+   * motor_id : The specific motor.
+   * encoder_angle : the angle in encoder counts to convert.
+   */
   float deg_angle;
   deg_angle = (float)(encoder_angle - extreme_values_motor[motor_id][1]) * servo_deg_ratio / (float)extreme_values_motor[motor_id][3];
 
   return deg_angle;
 }
 
-// ErrorCode Droideka::move(int throttle)
-// {
-//   DroidekaMode mode = get_mode();
-//   if (mode == WALKING)
-//   {
-//     /* TODO : find out what variable to change with the throttle : the easy one is the speed of the moves, the harder one is the
-//      *        the easy one is the speed of the moves
-//      *        the harder one is the reach of the move, i.e. how far the legs go (requires more computation)
-//      */
-
-//     walk(throttle_x, throttle_y);
-//   }
-//   else if (mode == ROLLING)
-//   {
-//     roll(throttle);
-//   }
-//   return NO_ERROR;
-// }
-
 DroidekaMode Droideka::get_mode()
 {
+  /* Checks the robot mode.
+   * At startup the mode is undefined as we don't know how the legs are positioned.
+   * If all feet are not touching the ground, then it is assumed the robot is in Rolling mode.
+   * Else it is in walking mode.
+   */
   if (current_mode == UNDEFINED)
   {
     if (current_position == Droideka_Position(maintenance_pos))
@@ -495,6 +555,10 @@ DroidekaMode Droideka::get_mode()
 
 ErrorCode Droideka::change_mode()
 {
+  /* Switches from a mode to another.
+   * If the robot is in maintenance mode, then it goes to Rolling mode.
+   * Otherwise it switches from Walking to Rolling and vice-versa.
+   */
   DroidekaMode mode = get_mode();
   if (mode == MAINTENANCE)
   {
@@ -536,6 +600,12 @@ ErrorCode Droideka::change_mode()
 
 ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time)
 {
+  /* Transposes a desired position in (theta, rho, z) into an Action to be performed in a specific time span.
+   *
+   * pos : the desired Droideka_Position
+   * pos_act : a placeholder action the will be used in act afterwards.
+   * time : the time span.
+   */
   float knee_angle_sign;
 
   if (!pos.valid_position)
@@ -584,6 +654,12 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
 
 ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 {
+  /* Uses previously defined funcs to move to a desired position in a specific time frame.
+   * Also, when the robot is in unparked position, it is the appropriate time to calibrate the IMU, so ti does that as well.
+   *
+   * pos : the desired Droideka_Position
+   * time : the time span.
+   */
   if (current_position == Droideka_Position(unparked))
   {
     read_imu();
@@ -603,6 +679,11 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
 
 ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
 {
+  /* Parking routine -> goes from unparked position to parked position for rolling.
+   *
+   * time : the time in which to perform each moves.
+   * overwriting : true if you want to go in parked position no matter what position you are currently in. Used when movement is paused.
+   */
   float temp[LEG_NB][3];
   Droideka_Position curr = get_current_position();
   for (int8_t ii = 0; ii < LEG_NB; ii++)
@@ -634,7 +715,11 @@ ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
 
 ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
 {
-  // delayed_function(NOTHING, 0);
+  /* Unparking routine -> goes from parked position to unparked position for walking.
+   *
+   * time : the time in which to perform each moves.
+   * overwriting : true if you want to go in unparked position no matter what position you are currently in. Never used at the moment.
+   */
   ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(parked), Droideka_Position(unparking), time), overwriting);
   if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
   {
@@ -651,6 +736,10 @@ ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
 
 void Droideka::delayed_function()
 {
+  /* Sometimes, it is useful to be able to perform function at a certain timing after another action has been done.
+   * This function checks if there are any function waiting to be performed.
+   * Handles only one function at a time.
+   */
   if (func != NOTHING)
   {
     if (since_event > event_time_limit)
@@ -676,6 +765,11 @@ void Droideka::delayed_function()
 
 void Droideka::delayed_function(DelayedFunction f, int t)
 {
+  /* Sometimes, it is useful to be able to perform function at a certain timing after another action has been done.
+   * This function sets up the function and timing.
+   * f : the function to be performed
+   * t : the amount of time after which it has to be performed.
+   */
   if (func == NOTHING || f == NOTHING) // If there are no functions already waiting, or if we need to remove the current delayed function.
   {
     func = f;
@@ -692,7 +786,8 @@ void Droideka::delayed_function(DelayedFunction f, int t)
 
 ErrorCode Droideka::go_to_maintenance()
 {
-  // delayed_function(NOTHING, 0);
+  /* Goes to Maintenance position.
+   */
   Droideka_Position maintenance_(maintenance_pos);
   ErrorCode result = set_movement(Droideka_Movement(current_position, maintenance_, 2000));
   delayed_function(DISABLE_SERVOS, 2500); // disabling the servos after the maintenance position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
@@ -702,7 +797,9 @@ ErrorCode Droideka::go_to_maintenance()
 
 Droideka_Position Droideka::get_current_position()
 {
-  // Il faut récupérer le lastState_ des servos, transformer cela en radians, puis degrés, puis en Droideka_Position.
+  /* Measures the current leg position the robot is in.
+   * Gets the servos last_state, transforms this in rads, then degrees, then in a Droidea_Position instance.
+   */
   State lastState = read_servos_positions();
 
   while (lastState.correct_motor_reading == false)
@@ -736,6 +833,9 @@ Droideka_Position Droideka::get_current_position()
 
 ErrorCode Droideka::stop_movement()
 {
+  /* Stops movement.
+   * Can not be resumed.
+   */
   if (movement.started == true && movement.finished == false)
   {
     movement.finished = true;
@@ -747,6 +847,9 @@ ErrorCode Droideka::stop_movement()
 
 ErrorCode Droideka::pause_movement(bool pause = true)
 {
+  /* Pauses movement.
+   * Can be resumed.
+   */
   if (movement.started == true && movement.finished == false)
   {
     unsigned long now = micros(); // Watch out for rollover!
@@ -768,6 +871,10 @@ ErrorCode Droideka::pause_movement(bool pause = true)
 
 ErrorCode Droideka::next_movement()
 {
+  /* Computes the next position of the movement.
+   * If the movement has not started, perform a voltage check to verify we are not asking to move while on too low battery voltage.
+   * Then depending on the timing at which the function is called, it takes the appropriate position from the movement to move in, and performs the move with the appropriate timing.
+   */
   if (movement.started == false && movement.finished == false)
   {
     if (movement.type != COG_TRAJ)
@@ -848,6 +955,12 @@ ErrorCode Droideka::next_movement()
 
 ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = false)
 {
+  /* Sets up the next Droideka_Movement to be performed by the robot.
+   * It also checks if the current_position and the starting_position of the D_Movement are matching.
+   *
+   * mvmt : the movement to be performed
+   * overwriting : true if the movement needs to be performed no matter what position the robot is in.
+   */
   if (overwriting)
   {
     movement = mvmt;
@@ -880,6 +993,12 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
 
 ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time)
 {
+  /* Adds a position to a Droideka_Movement composed of a sequence of Droideka_Position.
+   * Only do this when not moving (It could probably be done while moving, but i did ot have a use case for that yet).
+   *
+   * pos : the position to add
+   * time : The time span to go from the previous position in the sequence to the one added.
+   */
   if (movement.started == false || movement.finished == true)
   {
     movement.add_position(pos, time);
@@ -893,6 +1012,8 @@ ErrorCode Droideka::add_position(Droideka_Position pos, unsigned long time)
 
 ErrorCode Droideka::keep_going()
 {
+  /* Calls the keep_goign function of Droideka_Movement.
+   */
   if (movement.started == false)
   {
     return NO_ERROR;
@@ -910,6 +1031,12 @@ ErrorCode Droideka::keep_going()
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 {
+  /* While in a STABLE_GAIT or TROT_GAIT move, it is important to know if the movement continues or stops (depending on controller input) as the movement will not be the same.
+   * This function specifies the next part of the movement.
+   * Warning : This will not update direction changes.
+   *
+   * ms : the next MovementSequence.
+   */
   if ((movement.type == STABLE_GAIT || movement.type == TROT_GAIT) && movement.finished == false)
   {
     movement.next_seq = ms;
@@ -919,6 +1046,11 @@ ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
 
 ErrorCode Droideka::next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang)
 {
+  /* Same as above. However, it specifies the future inputs in case of a direction change while moving.
+   *
+   * mvmt : the movement to be performed
+   * next_long, next_lat, next_ang : holds the future longitudinal/transversal translation and rotation values.
+   */
   if ((movement.type == STABLE_GAIT || movement.type == TROT_GAIT) && movement.finished == false)
   {
     movement.next_seq = ms;
