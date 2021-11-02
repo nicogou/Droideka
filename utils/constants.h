@@ -9,9 +9,6 @@
 #define BODY_LENGTH 11.0     // Distance between the front and back legs (from one vertical axis to the other)
 #define BODY_WIDTH 11.0      // Distance between the left and right legs (from one vertical axis to the other)
 #define TIME_SAMPLE 98       // Number of time sample used in a Droideka_Movement.
-// #define MAX_LONGITUDINAL_COG_MOVE BODY_LENGTH / 10
-// #define MAX_LATERAL_COG_MOVE BODY_WIDTH / 10
-// #define MAX_ANGLE_COG_MOVE 1
 
 #define Y_TOUCHING -10.0    // Z distance when the robot is standing on its legs.
 #define Y_NOT_TOUCHING -6.0 // Z distance when the legs are not touching the ground anymore.
@@ -38,12 +35,6 @@
 #define GREEN_LED 14 // Pin of the blue LED
 #define RED_LED 15   // Pin of the blue LED
 
-// #define int_1 30
-// #define int_2 31
-// #define int_3 32
-// #define pot_1 39
-// #define pot_2 40
-// #define pot_3 41
 #define LONG_MOTOR_DEAD_ZONE 20 // Between [-LONG_MOTOR_DEAD_ZONE, LONG_MOTOR_DEAD_ZONE], the longitudinal motor can't make the robot move.
 #define PID_SAMPLE_TIME 10      // Pretty self explanatory. Computes the PID every 10 ms.
 
