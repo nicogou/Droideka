@@ -1,6 +1,6 @@
 #include "Droideka.h"
 
-Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA], String btHardware)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t imu_int_pin)
 {
   /* Initializes the Droideka.
    *
@@ -23,7 +23,7 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx
   digitalWrite(led[ok_led], 0);
 }
 
-Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware)
+Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t imu_int_pin)
 {
   /* Initializes the Droideka.
    *

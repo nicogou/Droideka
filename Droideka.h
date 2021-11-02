@@ -82,8 +82,8 @@ public:
     VectorFloat gravity; // [x, y, z]            gravity vector
     float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
-    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware);            // Class constructor.
-    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware); // Class constructor.
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin);            // Class constructor.
+    Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin); // Class constructor.
 
     void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos); // Starts the Bluetooth controller and servo bus communication.
     ErrorCode initialize_imu(int8_t imu_interrupt_pin);                  // Starts i2c communication with MPU6050

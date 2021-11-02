@@ -1,5 +1,6 @@
 #include "constants.h"
 
+// Defines the mode of the robot. Is it rolling, walking, in maintenance, or in an unknown position.
 enum DroidekaMode
 {
     UNDEFINED = 0,
@@ -9,6 +10,7 @@ enum DroidekaMode
 };
 typedef enum DroidekaMode DroidekaMode;
 
+// Specifies the delayed function to be operated. This will be more populated as more functionalities are added.
 enum DelayedFunction
 {
     NOTHING = 0,
@@ -18,6 +20,7 @@ enum DelayedFunction
 };
 typedef enum DelayedFunction DelayedFunction;
 
+// Error codes when an error occurs.
 enum ErrorCode
 {
     WAITING = 0,
@@ -54,6 +57,7 @@ enum ErrorCode
 };
 typedef enum ErrorCode ErrorCode;
 
+// Defines the state of the servos.
 struct State
 {
     unsigned long timestamp;
@@ -62,6 +66,7 @@ struct State
     bool correct_motor_reading = false;
 };
 
+// Defines the commands to be sent to the servos.
 struct Action
 {
     int32_t angle[MOTOR_NB]; // Angle that the motor has to go to
