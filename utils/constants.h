@@ -30,10 +30,11 @@
 #define VOLTAGE_CHECK_TIMER 120000         // Under normal voltage, do a voltage check every VOLTAGE_CHECK_TIMER ms.
 #define VOLTAGE_CHECK_TIMER_HIGH_FREQ 1000 // Under abnormal voltage, do a voltage check every VOLTAGE_CHECK_TIMER_HIGH_FREQ ms.
 
-#define LED_NB 3     // Number of leds
-#define BLUE_LED 13  // Pin of the blue LED
-#define GREEN_LED 14 // Pin of the blue LED
-#define RED_LED 15   // Pin of the blue LED
+#define LED_PIN 33       // µC pin tied to data input of the WS2812B
+#define LED_TYPE WS2812B // Led type : WS2812B 2020
+#define COLOR_ORDER GRB  // Led color order
+#define NUM_LEDS 1       // Number of LEDs.
+#define BRIGHTNESS 96    // LED brightness
 
 #define LONG_MOTOR_DEAD_ZONE 20 // Between [-LONG_MOTOR_DEAD_ZONE, LONG_MOTOR_DEAD_ZONE], the longitudinal motor can't make the robot move.
 #define PID_SAMPLE_TIME 10      // Pretty self explanatory. Computes the PID every 10 ms.

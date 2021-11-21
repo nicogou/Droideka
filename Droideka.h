@@ -12,6 +12,7 @@
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "Wire.h"
 #include "PID_v1.h"
+#include <FastLED.h>
 
 class Droideka
 {
@@ -50,10 +51,7 @@ public:
     // IDs 6, 7 and 8 represent the rear left leg
     // IDs 9, 10 and 11 represent the rear right leg
 
-    const int led[LED_NB] = {RED_LED, GREEN_LED, BLUE_LED};
-    const int problem_led = 0;
-    const int ok_led = 1;
-    const int info_led = 2;
+    CRGB leds[NUM_LEDS];
 
     // Longitudinal Motor PID
     double Setpoint = 0.0, Input = 0.0, Output = 0.0; // Define PID variables.
