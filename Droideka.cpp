@@ -17,10 +17,11 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx
   droideka_rec = new Universal_Receiver(rx, tx, btHardware);
   initialize_imu(imu_int_pin);
   initialize_pid();
-  digitalWrite(led[info_led], 0);
-  digitalWrite(led[ok_led], 1);
+  leds[0] = CRGB::Green;
+  FastLED.show();
   delay(1000);
-  digitalWrite(led[ok_led], 0);
+  leds[0] = CRGB::Black;
+  FastLED.show();
 }
 
 Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t imu_int_pin)
@@ -39,10 +40,11 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareS
   droideka_rec = new Universal_Receiver(serial_receiver, btHardware);
   initialize_imu(imu_int_pin);
   initialize_pid();
-  digitalWrite(led[info_led], 0);
-  digitalWrite(led[ok_led], 1);
+  leds[0] = CRGB::Green;
+  FastLED.show();
   delay(1000);
-  digitalWrite(led[ok_led], 0);
+  leds[0] = CRGB::Black;
+  FastLED.show();
 }
 
 void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
@@ -61,16 +63,14 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
     servos[ii] = new LX16AServo(&servoBus, ii);
   }
 
-  for (int ii = 0; ii < LED_NB; ii++)
-  {
-    pinMode(led[ii], OUTPUT);
-    digitalWrite(led[ii], 0);
-  }
+  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
 
   while (check_voltage() == SERVOS_VOLTAGE_TOO_LOW)
   {
   }
-  digitalWrite(led[info_led], 1);
+  leds[0] = CRGB::Blue;
+  FastLED.show();
 
   movement.finished = true;
 }
@@ -106,14 +106,16 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
       disable_enable_motors();
       ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
       Serial.println("Servo voltage too low. Minimum: " + String(min_voltage) + " - Maximum: " + String(max_voltage));
-      digitalWrite(led[problem_led], 1);
+      leds[0] = CRGB::Red;
+      FastLED.show();
       voltage_check_timer = VOLTAGE_CHECK_TIMER_HIGH_FREQ;
       return result;
     }
     else
     {
       voltage_check_timer = VOLTAGE_CHECK_TIMER;
-      digitalWrite(led[problem_led], 0);
+      leds[0] = CRGB::Black;
+      FastLED.show();
       return NO_ERROR;
     }
   }
@@ -150,8 +152,8 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
   }
   else
   {
-    digitalWrite(led[info_led], 0);
-    digitalWrite(led[problem_led], 1);
+    leds[0] = CRGB::Red;
+    FastLED.show();
     Serial.println(F("MPU6050 connection failed"));
     return MPU_6050_CONNECTION_FAILED;
   }
@@ -199,7 +201,7 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
     for (int ii = 0; ii < nb_measures; ii++)
     {
       read_imu();
-      avg_pitch += ypr[1] * 180 / M_PI;
+      avg_pitch += ypr[2] * 180 / M_PI;
       delay(100);
     }
     avg_pitch = avg_pitch / nb_measures;
@@ -217,8 +219,8 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
     Serial.print(devStatus);
     Serial.println(F(")"));
 
-    digitalWrite(led[info_led], 0);
-    digitalWrite(led[problem_led], 1);
+    leds[0] = CRGB::Red;
+    FastLED.show();
     return MPU_6050_DMP_INIT_FAILED;
   }
 }
@@ -256,7 +258,7 @@ void Droideka::compute_pid()
    */
   if (pid_running == true)
   {
-    Input = (double)ypr[1] * 180 / M_PI - calibrated_pitch;
+    Input = (double)ypr[2] * 180 / M_PI - calibrated_pitch;
   }
 
   // if (pid_running == true)
@@ -275,7 +277,7 @@ void Droideka::compute_pid()
     if (long_pid->Compute())
     {
       command = Output;
-      roll(-command);
+      roll(command);
 
       Serial.print(Setpoint);
       Serial.print("\t");
@@ -663,7 +665,7 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
   if (current_position == Droideka_Position(unparked))
   {
     read_imu();
-    calibrated_pitch = (double)ypr[1] * 180 / M_PI;
+    calibrated_pitch = (double)ypr[2] * 180 / M_PI;
   }
   current_position = pos;
   Action action;
@@ -974,13 +976,15 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = fals
       if (current_position == mvmt.start_position)
       {
         movement = mvmt;
-        digitalWrite(led[info_led], 0);
+        leds[0] = CRGB::Black;
+        FastLED.show();
         delayed_function(NOTHING, 0);
         return NO_ERROR;
       }
       else
       {
-        digitalWrite(led[info_led], 1);
+        leds[0] = CRGB::Blue;
+        FastLED.show();
         return CURRENT_POS_AND_STARTING_POS_NOT_MATCHING;
       }
     }
