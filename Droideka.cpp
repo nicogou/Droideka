@@ -333,7 +333,7 @@ void Droideka::start_pid()
 {
   /* Puts PID controller in working mode.
    */
-  if (pid_running == false)
+  if (pid_running == false && movement.finished == true)
   {
     Serial.println("PID on!");
     Output = 0;
