@@ -86,11 +86,25 @@ void Droideka::initialize_position()
   Droideka_Position curr = get_current_position();
   if (mode == WALKING)
   {
-    unpark();
+    if (curr == Droideka_Position(unparked))
+    {
+      current_position = Droideka_Position(unparked);
+    }
+    else
+    {
+      unpark();
+    }
   }
   else if (mode == ROLLING)
   {
-    park(1000, false, true);
+    if (curr == Droideka_Position(parked))
+    {
+      current_position = Droideka_Position(parked);
+    }
+    else
+    {
+      park(1000, false, true);
+    }
   }
   current_mode = mode;
 }
