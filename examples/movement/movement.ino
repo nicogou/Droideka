@@ -146,7 +146,7 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(1) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = pid_set;
+        droid_1->Setpoint = -pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(1) && droid_1->current_mode == ROLLING)
@@ -155,7 +155,7 @@ void loop()
     }
     if (droid_1->droideka_rec->digitalFalling(3) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = -pid_set;
+        droid_1->Setpoint = pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(3) && droid_1->current_mode == ROLLING)

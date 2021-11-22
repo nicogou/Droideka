@@ -109,7 +109,7 @@ void Droideka::initialize_position()
   current_mode = mode;
 }
 
-ErrorCode Droideka::check_voltage(bool overwriting = false)
+ErrorCode Droideka::check_voltage(bool overwriting)
 {
   /* Battery Voltage checking function. If the battery is low we increase the frequency of the voltage checks.
    *
@@ -153,6 +153,7 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
       return NO_ERROR;
     }
   }
+  return NO_ERROR;
 }
 
 volatile bool mpuInterrupt = false; // indicates whether MPU interrupt pin has gone high
@@ -277,8 +278,8 @@ ErrorCode Droideka::read_imu()
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    return NO_ERROR;
   }
+  return NO_ERROR;
 }
 
 void Droideka::initialize_pid()
@@ -422,7 +423,7 @@ bool Droideka::receive_data()
   return false;
 }
 
-ErrorCode Droideka::roll(int speed = 0)
+ErrorCode Droideka::roll(int speed)
 {
   /* Commands the longitudinal motor to go to a specific speed
    *
@@ -692,7 +693,7 @@ ErrorCode Droideka::in_position(Droideka_Position pos, Action &pos_act, int time
   }
 }
 
-ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
+ErrorCode Droideka::move_into_position(Droideka_Position pos, int time)
 {
   /* Uses previously defined funcs to move to a desired position in a specific time frame.
    * Also, when the robot is in unparked position, it is the appropriate time to calibrate the IMU, so ti does that as well.
@@ -719,7 +720,7 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
   return result;
 }
 
-ErrorCode Droideka::park(int time = 1000, bool overwriting = false, bool skip_middle = false)
+ErrorCode Droideka::park(int time, bool overwriting, bool skip_middle)
 {
   /* Parking routine -> goes from unparked position to parked position for rolling.
    *
@@ -768,7 +769,7 @@ ErrorCode Droideka::park(int time = 1000, bool overwriting = false, bool skip_mi
   return NO_ERROR;
 }
 
-ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false, bool skip_middle = false)
+ErrorCode Droideka::unpark(int time, bool overwriting, bool skip_middle)
 {
   /* Unparking routine -> goes from parked position to unparked position for walking.
    *
@@ -900,7 +901,7 @@ Droideka_Position Droideka::get_current_position()
   return result;
 }
 
-ErrorCode Droideka::stop_movement()
+void Droideka::stop_movement()
 {
   /* Stops movement.
    * Can not be resumed.
@@ -910,11 +911,10 @@ ErrorCode Droideka::stop_movement()
     movement.finished = true;
     movement.seq = STARTING_SEQUENCE;
     movement.next_seq = STARTING_SEQUENCE;
-    return NO_ERROR;
   }
 }
 
-ErrorCode Droideka::pause_movement(bool pause = true)
+void Droideka::pause_movement(bool pause)
 {
   /* Pauses movement.
    * Can be resumed.
@@ -934,7 +934,6 @@ ErrorCode Droideka::pause_movement(bool pause = true)
       movement.paused = false;
       Serial.println("Movement unpaused!");
     }
-    return NO_ERROR;
   }
 }
 
@@ -991,7 +990,7 @@ ErrorCode Droideka::next_movement()
     }
     if (now - movement.start >= movement.time_iter[movement.iter] && now - movement.start < movement.time_span)
     {
-      for (int8_t ii = movement.iter + 1; ii < movement.nb_iter; ii++)
+      for (uint8_t ii = movement.iter + 1; ii < movement.nb_iter; ii++)
       {
         if (now - movement.start >= movement.time_iter[ii - 1] && now - movement.start < movement.time_iter[ii])
         {
@@ -1020,9 +1019,10 @@ ErrorCode Droideka::next_movement()
       movement.iter++;
     }
   }
+  return NO_ERROR;
 }
 
-ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting = false)
+ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting)
 {
   /* Sets up the next Droideka_Movement to be performed by the robot.
    * It also checks if the current_position and the starting_position of the D_Movement are matching.
@@ -1100,7 +1100,7 @@ ErrorCode Droideka::keep_going()
   }
 }
 
-ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
+void Droideka::next_movement_sequence(MovementSequence ms)
 {
   /* While in a STABLE_GAIT or TROT_GAIT move, it is important to know if the movement continues or stops (depending on controller input) as the movement will not be the same.
    * This function specifies the next part of the movement.
@@ -1111,11 +1111,10 @@ ErrorCode Droideka::next_movement_sequence(MovementSequence ms)
   if ((movement.type == STABLE_GAIT || movement.type == TROT_GAIT) && movement.finished == false)
   {
     movement.next_seq = ms;
-    return NO_ERROR;
   }
 }
 
-ErrorCode Droideka::next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang)
+void Droideka::next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang)
 {
   /* Same as above. However, it specifies the future inputs in case of a direction change while moving.
    *
@@ -1128,7 +1127,5 @@ ErrorCode Droideka::next_movement_sequence(MovementSequence ms, float next_long,
     movement.next_longitudinal = next_long;
     movement.next_lateral = next_lat;
     movement.next_angle = next_ang;
-
-    return NO_ERROR;
   }
 }

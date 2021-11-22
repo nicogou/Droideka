@@ -26,11 +26,11 @@ public:
     void disable_motors();
     void disable_leg_motors();
     void disable_long_motor();
-    uint16_t avg_voltage = 0;                                    // Holds the average input voltage of the servos in millivolts.
-    uint16_t min_voltage = 0;                                    // Holds the minimum input voltage of the servos in millivolts.
-    uint16_t max_voltage = 0;                                    // Holds the maximum input voltage of the servos in millivolts.
-    uint16_t servo_voltage[MOTOR_LONG_NB];                       // Holds the input voltage of the servos in millivolts.
-    int32_t voltage_check_timer = VOLTAGE_CHECK_TIMER_HIGH_FREQ; // holds the time between voltage checks.
+    uint16_t avg_voltage = 0;                                     // Holds the average input voltage of the servos in millivolts.
+    uint16_t min_voltage = 0;                                     // Holds the minimum input voltage of the servos in millivolts.
+    uint16_t max_voltage = 0;                                     // Holds the maximum input voltage of the servos in millivolts.
+    uint16_t servo_voltage[MOTOR_LONG_NB];                        // Holds the input voltage of the servos in millivolts.
+    uint32_t voltage_check_timer = VOLTAGE_CHECK_TIMER_HIGH_FREQ; // holds the time between voltage checks.
 
     const float hip_length = HIP_LENGTH;                          // L2 -> length from knee to horizontal axis of the hip.
     const float tibia_length = TIBIA_LENGTH;                      // L1 -> length from tip of the leg to knee.
@@ -103,7 +103,7 @@ public:
     void delayed_function(DelayedFunction f, int t); // Sets up the function f to be operated after t ms.
     DelayedFunction func = NOTHING;                  // Delayed function to be operated. Nothing at startup.
     elapsedMillis since_event;                       // Timer for a delayed function
-    int event_time_limit = 0;                        // Store time when a delayed function has to be operated.
+    uint32_t event_time_limit = 0;                   // Store time when a delayed function has to be operated.
 
     // GENERAL MOVEMENT OF THE ROBOT
     DroidekaMode current_mode = UNDEFINED; // Current mode. UNDEFINED at startup before get_mode is called for the first time.
@@ -122,36 +122,36 @@ public:
     ErrorCode unpark(int time = 1000, bool overwriting = false, bool skip_middle = false); // Unparking routine
     ErrorCode go_to_maintenance();                                                         // Going to Maintenance position routine
 
-    Droideka_Position get_current_position();                                                               // Read servo position to get current position. Not super-duper precise so seldom used.
-    ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);                               // Sets up a Droideka_Movement for the robot to operate.
-    ErrorCode next_movement();                                                                              // Determines at which point of the Droideka_Movement we are and moves accordingly.
-    ErrorCode stop_movement();                                                                              // Stops movement. No resuming possible. This is only a software stop !
-    ErrorCode pause_movement(bool pause = true);                                                            // Pauses movement. It can be resumed.
-    ErrorCode add_position(Droideka_Position pos, unsigned long time);                                      // Adds a position to the Droideka_Movement. Used only if D_Movement is of SEQUENCE type.
-    ErrorCode keep_going();                                                                                 // Calls the keep_going function of class D_Movement to see if the steps continue. That only happens in STABLE_GAIT and TROT_GAIT Droideka_Movement types.
-    ErrorCode next_movement_sequence(MovementSequence ms);                                                  // In STABLE_GAIT or TROT_GAIT Movement types, indicates if the steps continue or stops.
-    ErrorCode next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang); // Same as above but with different direction.
+    Droideka_Position get_current_position();                                                          // Read servo position to get current position. Not super-duper precise so seldom used.
+    ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);                          // Sets up a Droideka_Movement for the robot to operate.
+    ErrorCode next_movement();                                                                         // Determines at which point of the Droideka_Movement we are and moves accordingly.
+    void stop_movement();                                                                              // Stops movement. No resuming possible. This is only a software stop !
+    void pause_movement(bool pause = true);                                                            // Pauses movement. It can be resumed.
+    ErrorCode add_position(Droideka_Position pos, unsigned long time);                                 // Adds a position to the Droideka_Movement. Used only if D_Movement is of SEQUENCE type.
+    ErrorCode keep_going();                                                                            // Calls the keep_going function of class D_Movement to see if the steps continue. That only happens in STABLE_GAIT and TROT_GAIT Droideka_Movement types.
+    void next_movement_sequence(MovementSequence ms);                                                  // In STABLE_GAIT or TROT_GAIT Movement types, indicates if the steps continue or stops.
+    void next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang); // Same as above but with different direction.
 
     // Holds values for the parked position
-    const float parked[LEG_NB][3] = {
+    float parked[LEG_NB][3] = {
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING},
         {THETA_PARKING, X_PARKING, Y_PARKING}};
     // Holds values for the trnaisiton position between parking and unparking
-    const float unparking[LEG_NB][3] = {
+    float unparking[LEG_NB][3] = {
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_NOT_TOUCHING}};
     // Holds values for the unparked position
-    const float unparked[LEG_NB][3] = {
+    float unparked[LEG_NB][3] = {
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING},
         {THETA_IDLE, X_IDLE, Y_TOUCHING}};
     // Holds values for the maintenance position
-    const float maintenance_pos[LEG_NB][3] = {
+    float maintenance_pos[LEG_NB][3] = {
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
         {THETA_MAINTENANCE, X_MAINTENANCE, Y_MAINTENANCE},
