@@ -54,6 +54,7 @@ enum ErrorCode
 
     MPU_6050_CONNECTION_FAILED = 600,
     MPU_6050_DMP_INIT_FAILED = 601,
+    DMP_NOT_READY = 602,
 };
 typedef enum ErrorCode ErrorCode;
 

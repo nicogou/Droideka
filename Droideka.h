@@ -84,8 +84,9 @@ public:
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin); // Class constructor.
 
     void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos); // Starts the Bluetooth controller and servo bus communication.
+    void initialize_position();                                          // Goes to parked or unparked position depending on position at startup.
     ErrorCode initialize_imu(int8_t imu_interrupt_pin);                  // Starts i2c communication with MPU6050
-    void read_imu();                                                     // Reads IMU data and stores it in ypr[]
+    ErrorCode read_imu();                                                // Reads IMU data and stores it in ypr[]
     void initialize_pid();                                               // Starts the PID controller
     void compute_pid();                                                  // Calculates PID Output for the longitudinal motor
     void start_pid();                                                    // Starts the PID when needed
@@ -116,10 +117,10 @@ public:
     ErrorCode in_position(Droideka_Position pos, Action &pos_act, int time); // Checks if the wanted position is reachable given the mechanical constraints of the robot.
     void act(Action *action);                                                // Sends move commands to the leg servos.
 
-    ErrorCode move_into_position(Droideka_Position pos, int time = 0); // Moves into a Droideka_Position in time ms.
-    ErrorCode park(int time = 1000, bool overwriting = false);         // Parking routine
-    ErrorCode unpark(int time = 1000, bool overwriting = false);       // Unparking routine
-    ErrorCode go_to_maintenance();                                     // Going to Maintenance position routine
+    ErrorCode move_into_position(Droideka_Position pos, int time = 0);                     // Moves into a Droideka_Position in time ms.
+    ErrorCode park(int time = 1000, bool overwriting = false, bool skip_middle = false);   // Parking routine
+    ErrorCode unpark(int time = 1000, bool overwriting = false, bool skip_middle = false); // Unparking routine
+    ErrorCode go_to_maintenance();                                                         // Going to Maintenance position routine
 
     Droideka_Position get_current_position();                                                               // Read servo position to get current position. Not super-duper precise so seldom used.
     ErrorCode set_movement(Droideka_Movement mvmt, bool overwriting = false);                               // Sets up a Droideka_Movement for the robot to operate.

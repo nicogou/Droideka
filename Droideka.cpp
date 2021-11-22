@@ -22,6 +22,7 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx
   delay(1000);
   leds[0] = CRGB::Black;
   FastLED.show();
+  initialize_position();
 }
 
 Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA], String btHardware, int8_t imu_int_pin)
@@ -45,6 +46,7 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareS
   delay(1000);
   leds[0] = CRGB::Black;
   FastLED.show();
+  initialize_position();
 }
 
 void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
@@ -75,9 +77,27 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
   movement.finished = true;
 }
 
+void Droideka::initialize_position()
+{
+  /* Goes to parked or unparked position depending on position at startup.
+   * At startup we don't know what position or mode the robot is in. This checks the mode at startup and moves to the corresponding position.
+   */
+  DroidekaMode mode = get_mode();
+  Droideka_Position curr = get_current_position();
+  if (mode == WALKING)
+  {
+    unpark();
+  }
+  else if (mode == ROLLING)
+  {
+    park(1000, false, true);
+  }
+  current_mode = mode;
+}
+
 ErrorCode Droideka::check_voltage(bool overwriting = false)
 {
-  /* Battery Voltage checking function. If the battery is low we increase the frequency of the voltag checks.
+  /* Battery Voltage checking function. If the battery is low we increase the frequency of the voltage checks.
    *
    * overwriting : true if you want to perform a voltage check immediately.
    */
@@ -196,15 +216,18 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
     // get expected DMP packet size for later comparison
     packetSize = mpu.dmpGetFIFOPacketSize();
 
-    float avg_pitch = 0;
+    float avg_pitch = 0.0;
     int nb_measures = 5;
+    delay(1000);
     for (int ii = 0; ii < nb_measures; ii++)
     {
-      read_imu();
-      avg_pitch += ypr[2] * 180 / M_PI;
-      delay(100);
+      if (read_imu() == NO_ERROR)
+      {
+        avg_pitch += ypr[2] * 180 / M_PI;
+        delay(100);
+      }
     }
-    avg_pitch = avg_pitch / nb_measures;
+    avg_pitch = avg_pitch / (float)nb_measures;
     calibrated_pitch = avg_pitch;
 
     return NO_ERROR;
@@ -225,14 +248,14 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
   }
 }
 
-void Droideka::read_imu()
+ErrorCode Droideka::read_imu()
 {
   /* Reads the IMU data.
    * Almost a copy-paste from examples in MPU6050 (I2C-Dev) lib.
    */
   // if programming failed, don't try to do anything
   if (!dmpReady)
-    return;
+    return DMP_NOT_READY;
   // read a packet from FIFO
   if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
   { // Get the Latest packet
@@ -240,6 +263,7 @@ void Droideka::read_imu()
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    return NO_ERROR;
   }
 }
 
@@ -664,7 +688,9 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
    */
   if (current_position == Droideka_Position(unparked))
   {
-    read_imu();
+    while (read_imu() != NO_ERROR)
+    {
+    }
     calibrated_pitch = (double)ypr[2] * 180 / M_PI;
   }
   current_position = pos;
@@ -679,58 +705,85 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time = 0)
   return result;
 }
 
-ErrorCode Droideka::park(int time = 1000, bool overwriting = false)
+ErrorCode Droideka::park(int time = 1000, bool overwriting = false, bool skip_middle = false)
 {
   /* Parking routine -> goes from unparked position to parked position for rolling.
    *
    * time : the time in which to perform each moves.
    * overwriting : true if you want to go in parked position no matter what position you are currently in. Used when movement is paused.
+   * skip_middle : true if you want to go straight to parked position. false (default) if you want to go through th intermediate position.
    */
-  float temp[LEG_NB][3];
-  Droideka_Position curr = get_current_position();
-  for (int8_t ii = 0; ii < LEG_NB; ii++)
+  ErrorCode result;
+  if (skip_middle == false)
   {
-    temp[ii][0] = curr.legs[ii][0];
-    temp[ii][1] = curr.legs[ii][1];
-    temp[ii][2] = Y_NOT_TOUCHING;
-  }
+    Droideka_Position curr = get_current_position();
+    float temp[LEG_NB][3];
+    for (int8_t ii = 0; ii < LEG_NB; ii++)
+    {
+      temp[ii][0] = curr.legs[ii][0];
+      temp[ii][1] = curr.legs[ii][1];
+      temp[ii][2] = Y_NOT_TOUCHING;
+    }
 
-  Droideka_Position temp_pos(temp);
-  if (!temp_pos.valid_position)
-  {
-    return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
-  }
+    Droideka_Position temp_pos(temp);
+    if (!temp_pos.valid_position)
+    {
+      return PARKING_TRANSITION_POSITION_IMPOSSIBLE;
+    }
 
-  ErrorCode result = set_movement(Droideka_Movement(current_position, Droideka_Position(temp), time), overwriting);
-  if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
-  {
-    return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+    result = set_movement(Droideka_Movement(current_position, temp_pos, time), overwriting);
+    if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
+    {
+      return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+    }
+    result = add_position(Droideka_Position(parked), time);
+    if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+    {
+      return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+    }
   }
-  result = add_position(Droideka_Position(parked), time);
-  if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+  else
   {
-    return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+    result = set_movement(Droideka_Movement(current_position, Droideka_Position(parked), time), overwriting);
+    if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+    {
+      return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+    }
   }
   delayed_function(DISABLE_LEG_SERVOS, 3 * time); // disabling the servos after the parking position is reached. 2*time is needed in theory. 3*time to have a bit of wiggle room.
   return NO_ERROR;
 }
 
-ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false)
+ErrorCode Droideka::unpark(int time = 1000, bool overwriting = false, bool skip_middle = false)
 {
   /* Unparking routine -> goes from parked position to unparked position for walking.
    *
    * time : the time in which to perform each moves.
    * overwriting : true if you want to go in unparked position no matter what position you are currently in. Never used at the moment.
+   * skip_middle : true if you want to go straight to unparked position. false (default) if you want to go through th intermediate position.
    */
-  ErrorCode result = set_movement(Droideka_Movement(Droideka_Position(parked), Droideka_Position(unparking), time), overwriting);
-  if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
+
+  ErrorCode result;
+  if (skip_middle == false)
   {
-    return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+    result = set_movement(Droideka_Movement(Droideka_Position(parked), Droideka_Position(unparking), time), overwriting);
+    if (result == MOVING_THUS_UNABLE_TO_SET_MOVEMENT)
+    {
+      return MOVING_THUS_UNABLE_TO_SET_MOVEMENT;
+    }
+    result = add_position(Droideka_Position(unparked), time);
+    if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+    {
+      return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+    }
   }
-  result = add_position(Droideka_Position(unparked), time);
-  if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+  else
   {
-    return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+    result = set_movement(Droideka_Movement(current_position, Droideka_Position(unparked), time), overwriting);
+    if (result == MOVING_THUS_UNABLE_TO_ADD_POSITION)
+    {
+      return MOVING_THUS_UNABLE_TO_ADD_POSITION;
+    }
   }
 
   return NO_ERROR;
