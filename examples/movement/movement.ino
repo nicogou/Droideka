@@ -31,7 +31,10 @@ void loop()
     droid_1->check_voltage();
     droid_1->receive_data();
 
-    droid_1->read_imu();
+    if (droid_1->read_imu() == NO_ERROR)
+    {
+        // Serial.println(droid_1->ypr[2]);
+    }
     droid_1->compute_pid();
 
     if (droid_1->droideka_rec->digitalState(3))
@@ -120,7 +123,8 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(6))
     {
-        droid_1->disable_enable_motors();
+        droid_1->disable_motors();
+        droid_1->stop_pid();
     }
 
     if (droid_1->droideka_rec->digitalFalling(12))

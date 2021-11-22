@@ -137,7 +137,7 @@ ErrorCode Droideka::check_voltage(bool overwriting = false)
 
     if (min_voltage < 4500 || max_voltage < SERVOS_UNDER_VOLTAGE_LIMIT)
     {
-      disable_enable_motors();
+      disable_motors();
       ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
       Serial.println("Servo voltage too low. Minimum: " + String(min_voltage) + " - Maximum: " + String(max_voltage));
       leds[0] = CRGB::Red;
@@ -442,7 +442,7 @@ ErrorCode Droideka::roll(int speed = 0)
   return NO_ERROR;
 }
 
-void Droideka::disable_enable_motors()
+void Droideka::disable_motors()
 {
   /* Disables all servos (legs and longitudinal)
    */
@@ -815,7 +815,7 @@ void Droideka::delayed_function()
     {
       if (func == DISABLE_SERVOS)
       {
-        disable_enable_motors();
+        disable_motors();
         func = NOTHING;
       }
       else if (func == DISABLE_LEG_SERVOS)

@@ -23,7 +23,7 @@ public:
     // Create a ServoBus instance for the debug Board
     LX16ABus servoBus;
     LX16AServo *servos[MOTOR_LONG_NB];
-    void disable_enable_motors();
+    void disable_motors();
     void disable_leg_motors();
     void disable_long_motor();
     uint16_t avg_voltage = 0;                                    // Holds the average input voltage of the servos in millivolts.
