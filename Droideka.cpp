@@ -234,19 +234,7 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
     // get expected DMP packet size for later comparison
     packetSize = mpu.dmpGetFIFOPacketSize();
 
-    float avg_pitch = 0.0;
-    int nb_measures = 5;
-    delay(1000);
-    for (int ii = 0; ii < nb_measures; ii++)
-    {
-      if (read_imu() == NO_ERROR)
-      {
-        avg_pitch += ypr[2] * 180 / M_PI;
-        delay(100);
-      }
-    }
-    avg_pitch = avg_pitch / (float)nb_measures;
-    calibrated_pitch = avg_pitch;
+    calibrate_pitch(5);
 
     return NO_ERROR;
   }
@@ -283,6 +271,27 @@ ErrorCode Droideka::read_imu()
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
   }
   return NO_ERROR;
+}
+
+void Droideka::calibrate_pitch(int nb)
+{
+  if (nb <= 0)
+  {
+    nb = 1;
+  }
+  int ii = 0;
+
+  float avg_pitch = 0.0;
+  while (ii < nb)
+  {
+    if (read_imu() == NO_ERROR)
+    {
+      avg_pitch += ypr[2] * 180 / M_PI;
+      ii++;
+    }
+  }
+  avg_pitch = avg_pitch / (float)nb;
+  calibrated_pitch = avg_pitch;
 }
 
 void Droideka::initialize_pid()

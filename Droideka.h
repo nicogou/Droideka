@@ -84,6 +84,7 @@ public:
     VectorFloat gravity; // [x, y, z]            gravity vector
     float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
     double calibrated_pitch = 0;
+    void calibrate_pitch(int nb = 1);
 
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin);            // Class constructor.
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin); // Class constructor.
