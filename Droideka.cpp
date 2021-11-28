@@ -61,7 +61,7 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
     servos[ii] = new LX16AServo(&servoBus, ii);
   }
 
-  prev_status_leds[0] = CRGB::Black;
+  prev_status_leds = CRGB::Black;
   leds[0] = CRGB::Black;
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
@@ -116,7 +116,6 @@ ErrorCode Droideka::check_voltage(bool overwriting)
    *
    * overwriting : true if you want to perform a voltage check immediately.
    */
-  return NO_ERROR;
   if (overwriting || sinceVoltageCheck >= voltage_check_timer)
   {
     sinceVoltageCheck = 0;
@@ -149,7 +148,7 @@ ErrorCode Droideka::check_voltage(bool overwriting)
     else
     {
       voltage_check_timer = VOLTAGE_CHECK_TIMER;
-      status_led(CRGB::Black);
+      status_led(prev_status_leds);
       return NO_ERROR;
     }
   }
@@ -288,12 +287,12 @@ void Droideka::calibrate_pitch(int nb)
   }
   avg_pitch = avg_pitch / (float)nb;
   calibrated_pitch = avg_pitch;
-  status_led(prev_status_leds[0]);
+  status_led(prev_status_leds);
 }
 
 void Droideka::status_led(CRGB color)
 {
-  prev_status_leds[0] = leds[0];
+  prev_status_leds = leds[0];
   leds[0] = color;
   FastLED.show();
 }
