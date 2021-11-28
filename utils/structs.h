@@ -17,6 +17,7 @@ enum DelayedFunction
     DISABLE_SERVOS = 1,
     DISABLE_LEG_SERVOS = 2,
     DISABLE_LONG_SERVOS = 3,
+    TURN_OFF_LED = 4,
 };
 typedef enum DelayedFunction DelayedFunction;
 

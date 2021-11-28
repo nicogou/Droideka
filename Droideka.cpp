@@ -74,11 +74,12 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
   movement.finished = true;
 }
 
-void Droideka::initialize_position()
+unsigned long Droideka::initialize_position()
 {
   /* Goes to parked or unparked position depending on position at startup.
    * At startup we don't know what position or mode the robot is in. This checks the mode at startup and moves to the corresponding position.
    */
+  unsigned long time = 1000;
   DroidekaMode mode = get_mode();
   Droideka_Position curr = get_current_position();
   if (mode == WALKING)
@@ -90,6 +91,7 @@ void Droideka::initialize_position()
     else
     {
       unpark();
+      time = 2000;
     }
   }
   else if (mode == ROLLING)
@@ -101,9 +103,11 @@ void Droideka::initialize_position()
     else
     {
       park(1000, false, true);
+      time = 1000;
     }
   }
   current_mode = mode;
+  return time;
 }
 
 ErrorCode Droideka::check_voltage(bool overwriting)
@@ -112,6 +116,7 @@ ErrorCode Droideka::check_voltage(bool overwriting)
    *
    * overwriting : true if you want to perform a voltage check immediately.
    */
+  return NO_ERROR;
   if (overwriting || sinceVoltageCheck >= voltage_check_timer)
   {
     sinceVoltageCheck = 0;
@@ -879,11 +884,16 @@ void Droideka::delayed_function()
         disable_long_motor();
         func = NOTHING;
       }
+      else if (func == TURN_OFF_LED)
+      {
+        status_led(CRGB::Black);
+        func = NOTHING;
+      }
     }
   }
 }
 
-void Droideka::delayed_function(DelayedFunction f, int t)
+void Droideka::delayed_function(DelayedFunction f, unsigned long t)
 {
   /* Sometimes, it is useful to be able to perform function at a certain timing after another action has been done.
    * This function sets up the function and timing.

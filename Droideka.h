@@ -92,7 +92,7 @@ public:
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin); // Class constructor.
 
     void initialize(HardwareSerial *serial_servos, int8_t tXpin_servos); // Starts the Bluetooth controller and servo bus communication.
-    void initialize_position();                                          // Goes to parked or unparked position depending on position at startup.
+    unsigned long initialize_position();                                 // Goes to parked or unparked position depending on position at startup.
     ErrorCode initialize_imu(int8_t imu_interrupt_pin);                  // Starts i2c communication with MPU6050
     ErrorCode read_imu();                                                // Reads IMU data and stores it in ypr[]
     void initialize_pid();                                               // Starts the PID controller
@@ -107,11 +107,11 @@ public:
     State lastServoState;          // Stores the last known state of the servos.
     State read_servos_positions(); // Reads the servo positions.
 
-    void delayed_function();                         // Checks if a function must be operated after a certain time after an event. Example : disabling the leg servos after parking.
-    void delayed_function(DelayedFunction f, int t); // Sets up the function f to be operated after t ms.
-    DelayedFunction func = NOTHING;                  // Delayed function to be operated. Nothing at startup.
-    elapsedMillis since_event;                       // Timer for a delayed function
-    uint32_t event_time_limit = 0;                   // Store time when a delayed function has to be operated.
+    void delayed_function();                                   // Checks if a function must be operated after a certain time after an event. Example : disabling the leg servos after parking.
+    void delayed_function(DelayedFunction f, unsigned long t); // Sets up the function f to be operated after t ms.
+    DelayedFunction func = NOTHING;                            // Delayed function to be operated. Nothing at startup.
+    elapsedMillis since_event;                                 // Timer for a delayed function
+    uint32_t event_time_limit = 0;                             // Store time when a delayed function has to be operated.
 
     // GENERAL MOVEMENT OF THE ROBOT
     DroidekaMode current_mode = UNDEFINED; // Current mode. UNDEFINED at startup before get_mode is called for the first time.
