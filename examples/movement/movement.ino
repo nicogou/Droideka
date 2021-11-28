@@ -146,21 +146,26 @@ void loop()
 
     if (droid_1->droideka_rec->digitalFalling(1) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = -pid_set;
+        droid_1->Setpoint_long = -pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(1) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = 0.0;
+        droid_1->Setpoint_long = 0.0;
     }
     if (droid_1->droideka_rec->digitalFalling(3) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = pid_set;
+        droid_1->Setpoint_long = pid_set;
         droid_1->start_pid();
     }
     if (droid_1->droideka_rec->digitalRising(3) && droid_1->current_mode == ROLLING)
     {
-        droid_1->Setpoint = 0.0;
+        droid_1->Setpoint_long = 0.0;
+    }
+
+    if (droid_1->droideka_rec->digitalRising(10) && droid_1->current_mode == WALKING)
+    {
+        droid_1->two_leg_balance();
     }
 
     droid_1->next_movement();

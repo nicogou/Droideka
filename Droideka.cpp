@@ -289,21 +289,26 @@ void Droideka::initialize_pid()
 {
   /* Initializes the PID.
    */
-  long_pid->SetOutputLimits(-100, 100);
-  long_pid->SetSampleTime(PID_SAMPLE_TIME);
-  // Serial.println("Kp:" + String(long_pid->GetKp()) + " Ki:" + String(long_pid->GetKi()) + " Kd:" + String(long_pid->GetKd()));
+  long_pid->SetOutputLimits(LONG_PID_MIN_LIMIT, LONG_PID_MAX_LIMIT);
+  long_pid->SetSampleTime(LONG_PID_SAMPLE_TIME);
+  // Serial.println("Kp_long:" + String(long_pid->GetKp()) + " Ki_long:" + String(long_pid->GetKi()) + " Kd_long:" + String(long_pid->GetKd()));
+
+  pid_2L->SetOutputLimits(PID_2L_MIN_LIMIT, PID_2L_MAX_LIMIT);
+  pid_2L->SetSampleTime(PID_2L_SAMPLE_TIME);
 }
 
 void Droideka::compute_pid()
 {
-  /* Computes PID Output for longitudinal motor stabilization.
+  /* Computes PID Output for longitudinal motor stabilization and two legs stabilization.
    */
-  if (pid_running == true)
+
+  /************ Longitudinal PID ************/
+  if (long_pid_running == true)
   {
-    Input = (double)ypr[2] * 180 / M_PI - calibrated_pitch;
+    Input_long = (double)ypr[2] * 180 / M_PI - calibrated_pitch;
   }
 
-  // if (pid_running == true)
+  // if (long_pid_running == true)
   // {
   //   Serial.print(long_pid->GetKp());
   //   Serial.print("\t");
@@ -313,21 +318,58 @@ void Droideka::compute_pid()
   //   Serial.print("\t");
   // }
 
-  double command;
-  if (pid_running == true)
+  double command_long;
+  if (long_pid_running == true)
   {
     if (long_pid->Compute())
     {
-      command = Output;
-      roll(command);
+      command_long = Output_long;
+      roll(command_long);
 
-      Serial.print(Setpoint);
+      Serial.print(Setpoint_long);
       Serial.print("\t");
-      Serial.print(Input);
+      Serial.print(Input_long);
       // Serial.print("\t");
-      // Serial.print(Output);
+      // Serial.print(Output_long);
       // Serial.print("\t");
-      // Serial.print(command);
+      // Serial.print(command_long);
+      Serial.println();
+    }
+  }
+
+  /************ Two Legs PID ************/
+  if (pid_2L_running == true)
+  {
+    double imu_angle = (double)ypr[2] * 180 / M_PI - calibrated_pitch;
+    double cos_rot_around_legs = 2 * cos(imu_angle * M_PI / 180) - 1;
+    Input_2L = current_position.legs[0][2] * sqrt(1 - cos_rot_around_legs * cos_rot_around_legs) / cos_rot_around_legs;
+  }
+
+  // if (pid_2L_running == true)
+  // {
+  //   Serial.print(pid_2L->GetKp());
+  //   Serial.print("\t");
+  //   Serial.print(pid_2L->GetKi());
+  //   Serial.print("\t");
+  //   Serial.print(pid_2L->GetKd());
+  //   Serial.print("\t");
+  // }
+
+  double command_2L;
+  if (pid_2L_running == true)
+  {
+    if (pid_2L->Compute())
+    {
+      command_2L = Output_2L;
+      compute_2L(command_2L);
+
+      Serial.print(Setpoint_2L);
+      Serial.print("\t");
+      Serial.print(Input_2L);
+      // Serial.print("\t");
+      // Serial.print(Output_2L);
+      // Serial.print("\t");
+      // Serial.print(command_2L);
       Serial.println();
     }
   }
@@ -337,12 +379,12 @@ void Droideka::start_pid()
 {
   /* Puts PID controller in working mode.
    */
-  if (pid_running == false && movement.finished == true)
+  if (long_pid_running == false && movement.finished == true)
   {
-    Serial.println("PID on!");
-    Output = 0;
+    Serial.println("Long PID on!");
+    Output_long = 0;
     long_pid->SetMode(AUTOMATIC);
-    pid_running = true;
+    long_pid_running = true;
   }
 }
 
@@ -350,12 +392,12 @@ void Droideka::stop_pid()
 {
   /* Stops PID controller from computing.
    */
-  if (pid_running == true)
+  if (long_pid_running == true)
   {
-    Serial.println("PID off!");
+    Serial.println("Long PID off!");
     long_pid->SetMode(MANUAL);
     roll(0);
-    pid_running = false;
+    long_pid_running = false;
     delayed_function(DISABLE_LONG_SERVOS, 500);
   }
 }
@@ -622,18 +664,18 @@ ErrorCode Droideka::change_mode()
   }
   else if (mode == ROLLING)
   {
-    if (pid_running)
+    if (long_pid_running)
     {
-      if (Setpoint != 0)
+      if (Setpoint_long != 0)
       {
-        Setpoint = 0;
+        Setpoint_long = 0;
       }
       else
       {
         stop_pid();
       }
     }
-    if (!pid_running)
+    if (!long_pid_running)
     {
       unpark();
       current_mode = WALKING;
@@ -1135,4 +1177,30 @@ void Droideka::next_movement_sequence(MovementSequence ms, float next_long, floa
 
 void Droideka::two_leg_balance()
 {
+  /* Puts 2L PID controller in working mode.
+   */
+  if (pid_2L_running == false && movement.finished == true && current_position == Droideka_Position(unparked))
+  {
+    Serial.println("PID 2L on!");
+    ErrorCode result = set_movement(Droideka_Movement(current_position, current_position.move_leg(1, 0, 0, Y_NOT_TOUCHING - Y_TOUCHING).move_leg(2, 0, 0, Y_NOT_TOUCHING - Y_TOUCHING), 0));
+    Setpoint_2L = 0;
+    Output_2L = 0;
+    pid_2L->SetMode(AUTOMATIC);
+    pid_2L_running = true;
+  }
+
+  /* Stops 2L PID controller from computing.
+   */
+  if (pid_2L_running == true)
+  {
+    Serial.println("PID 2L off!");
+    pid_2L->SetMode(MANUAL);
+    pid_2L_running = false;
+    unpark(1000, true, true);
+  }
+}
+
+void Droideka::compute_2L(double pid_output)
+{
+  ErrorCode result = set_movement(Droideka_Movement(current_position, current_position.move_leg(0, pid_output / sqrt(2), pid_output / sqrt(2), 0).move_leg(3, -pid_output / sqrt(2), -pid_output / sqrt(2), 0), 0));
 }

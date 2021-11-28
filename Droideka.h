@@ -54,12 +54,16 @@ public:
     CRGB leds[NUM_LEDS];
 
     // Longitudinal Motor PID
-    double Setpoint = 0.0, Input = 0.0, Output = 0.0; // Define PID variables.
-    double Kp = 4.0, Ki = 0.0, Kd = 0.0;              // Define tuning parameters.
-    PID *long_pid = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
-    bool pid_running = false;
-    bool pid_tunings_updated = false;
-    double calibrated_pitch = 0;
+    double Setpoint_long = 0.0, Input_long = 0.0, Output_long = 0.0; // Define PID variables.
+    double Kp_long = 4.0, Ki_long = 0.0, Kd_long = 0.0;              // Define tuning parameters.
+    PID *long_pid = new PID(&Input_long, &Output_long, &Setpoint_long, Kp_long, Ki_long, Kd_long, DIRECT);
+    bool long_pid_running = false;
+
+    // Two legs balance PID
+    double Setpoint_2L = 0.0, Input_2L = 0.0, Output_2L = 0.0; // Define PID variables.
+    double Kp_2L = 1.0, Ki_2L = 0.0, Kd_2L = 0.0;              // Define tuning parameters.
+    PID *pid_2L = new PID(&Input_2L, &Output_2L, &Setpoint_2L, Kp_2L, Ki_2L, Kd_2L, DIRECT);
+    bool pid_2L_running = false;
 
     // MPU6050
     // class default I2C address is 0x68
@@ -79,6 +83,7 @@ public:
     Quaternion q;        // [w, x, y, z]         quaternion container
     VectorFloat gravity; // [x, y, z]            gravity vector
     float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+    double calibrated_pitch = 0;
 
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx, int8_t tx, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin);            // Class constructor.
     Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareSerial *serial_receiver, int16_t thresh[NB_MAX_DATA * 2], String btHardware, int8_t imu_int_pin); // Class constructor.
@@ -131,6 +136,9 @@ public:
     ErrorCode keep_going();                                                                            // Calls the keep_going function of class D_Movement to see if the steps continue. That only happens in STABLE_GAIT and TROT_GAIT Droideka_Movement types.
     void next_movement_sequence(MovementSequence ms);                                                  // In STABLE_GAIT or TROT_GAIT Movement types, indicates if the steps continue or stops.
     void next_movement_sequence(MovementSequence ms, float next_long, float next_lat, float next_ang); // Same as above but with different direction.
+
+    void two_leg_balance();
+    void compute_2L(double pid_output);
 
     // Holds values for the parked position
     float parked[LEG_NB][3] = {

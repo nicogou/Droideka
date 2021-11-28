@@ -37,7 +37,13 @@
 #define BRIGHTNESS 48    // LED brightness
 
 #define LONG_MOTOR_DEAD_ZONE 20 // Between [-LONG_MOTOR_DEAD_ZONE, LONG_MOTOR_DEAD_ZONE], the longitudinal motor can't make the robot move.
-#define PID_SAMPLE_TIME 10      // Pretty self explanatory. Computes the PID every 10 ms.
+#define LONG_PID_MIN_LIMIT -100 // Minimum limit for the longitudinal PID
+#define LONG_PID_MAX_LIMIT 100  // Maximum limit for the longitudinal PID
+#define LONG_PID_SAMPLE_TIME 10 // Pretty self explanatory. Computes the longitudinal PID every 10 ms.
+
+#define PID_2L_MIN_LIMIT -100 // Minimum limit for the two legs PID
+#define PID_2L_MAX_LIMIT 100  // Maximum limit for the two legs PID
+#define PID_2L_SAMPLE_TIME 10 // Pretty self explanatory. Computes the two legs PID every 10 ms.
 
 // IMU offsets. TO DO.
 #define X_GYRO_OFFSET 0
