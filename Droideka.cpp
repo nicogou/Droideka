@@ -67,8 +67,11 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
 
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
+  leds[0] = CRGB::Black;
+  FastLED.show();
+  delay(500);
 
-  while (check_voltage() == SERVOS_VOLTAGE_TOO_LOW)
+  while (check_voltage() != NO_ERROR)
   {
   }
   leds[0] = CRGB::Blue;
@@ -153,7 +156,7 @@ ErrorCode Droideka::check_voltage(bool overwriting)
       return NO_ERROR;
     }
   }
-  return NO_ERROR;
+  return VOLTAGE_CHECK_NOT_PERFORMED;
 }
 
 volatile bool mpuInterrupt = false; // indicates whether MPU interrupt pin has gone high
@@ -1128,4 +1131,8 @@ void Droideka::next_movement_sequence(MovementSequence ms, float next_long, floa
     movement.next_lateral = next_lat;
     movement.next_angle = next_ang;
   }
+}
+
+void Droideka::two_leg_balance()
+{
 }

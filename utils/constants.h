@@ -34,7 +34,7 @@
 #define LED_TYPE WS2812B // Led type : WS2812B 2020
 #define COLOR_ORDER GRB  // Led color order
 #define NUM_LEDS 1       // Number of LEDs.
-#define BRIGHTNESS 96    // LED brightness
+#define BRIGHTNESS 48    // LED brightness
 
 #define LONG_MOTOR_DEAD_ZONE 20 // Between [-LONG_MOTOR_DEAD_ZONE, LONG_MOTOR_DEAD_ZONE], the longitudinal motor can't make the robot move.
 #define PID_SAMPLE_TIME 10      // Pretty self explanatory. Computes the PID every 10 ms.
