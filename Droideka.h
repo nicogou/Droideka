@@ -52,6 +52,8 @@ public:
     // IDs 9, 10 and 11 represent the rear right leg
 
     CRGB leds[NUM_LEDS];
+    CRGB prev_status_leds[NUM_LEDS];
+    void status_led(CRGB color);
 
     // Longitudinal Motor PID
     double Setpoint_long = 0.0, Input_long = 0.0, Output_long = 0.0; // Define PID variables.
