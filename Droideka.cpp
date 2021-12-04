@@ -17,11 +17,9 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, int8_t rx
   droideka_rec = new Universal_Receiver(rx, tx, btHardware);
   initialize_imu(imu_int_pin);
   initialize_pid();
-  leds[0] = CRGB::Green;
-  FastLED.show();
+  status_led(CRGB::Green);
   delay(1000);
-  leds[0] = CRGB::Black;
-  FastLED.show();
+  status_led(CRGB::Black);
   initialize_position();
 }
 
@@ -41,11 +39,9 @@ Droideka::Droideka(HardwareSerial *serial_servos, int8_t tXpin_servos, HardwareS
   droideka_rec = new Universal_Receiver(serial_receiver, btHardware);
   initialize_imu(imu_int_pin);
   initialize_pid();
-  leds[0] = CRGB::Green;
-  FastLED.show();
+  status_led(CRGB::Green);
   delay(1000);
-  leds[0] = CRGB::Black;
-  FastLED.show();
+  status_led(CRGB::Black);
   initialize_position();
 }
 
@@ -65,17 +61,16 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
     servos[ii] = new LX16AServo(&servoBus, ii);
   }
 
+  prev_status_leds[0] = CRGB::Black;
+  leds[0] = CRGB::Black;
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
-  leds[0] = CRGB::Black;
-  FastLED.show();
-  delay(500);
+  status_led(CRGB::Black);
 
   while (check_voltage() != NO_ERROR)
   {
   }
-  leds[0] = CRGB::Blue;
-  FastLED.show();
+  status_led(CRGB::Blue);
 
   movement.finished = true;
 }
@@ -143,16 +138,14 @@ ErrorCode Droideka::check_voltage(bool overwriting)
       disable_motors();
       ErrorCode result = SERVOS_VOLTAGE_TOO_LOW;
       Serial.println("Servo voltage too low. Minimum: " + String(min_voltage) + " - Maximum: " + String(max_voltage));
-      leds[0] = CRGB::Red;
-      FastLED.show();
+      status_led(CRGB::Red);
       voltage_check_timer = VOLTAGE_CHECK_TIMER_HIGH_FREQ;
       return result;
     }
     else
     {
       voltage_check_timer = VOLTAGE_CHECK_TIMER;
-      leds[0] = CRGB::Black;
-      FastLED.show();
+      status_led(CRGB::Black);
       return NO_ERROR;
     }
   }
@@ -190,8 +183,7 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
   }
   else
   {
-    leds[0] = CRGB::Red;
-    FastLED.show();
+    status_led(CRGB::Red);
     Serial.println(F("MPU6050 connection failed"));
     return MPU_6050_CONNECTION_FAILED;
   }
@@ -248,8 +240,7 @@ ErrorCode Droideka::initialize_imu(int8_t imu_interrupt_pin)
     Serial.print(devStatus);
     Serial.println(F(")"));
 
-    leds[0] = CRGB::Red;
-    FastLED.show();
+    status_led(CRGB::Red);
     return MPU_6050_DMP_INIT_FAILED;
   }
 }
@@ -282,6 +273,7 @@ void Droideka::calibrate_pitch(int nb)
   int ii = 0;
 
   float avg_pitch = 0.0;
+  status_led(CRGB::Yellow);
   while (ii < nb)
   {
     if (read_imu() == NO_ERROR)
@@ -292,6 +284,14 @@ void Droideka::calibrate_pitch(int nb)
   }
   avg_pitch = avg_pitch / (float)nb;
   calibrated_pitch = avg_pitch;
+  status_led(prev_status_led);
+}
+
+void Droideka::status_led(CRGB color)
+{
+  prev_status_leds = leds[0];
+  leds[0] = color;
+  FastLED.show();
 }
 
 void Droideka::initialize_pid()
@@ -715,10 +715,7 @@ ErrorCode Droideka::move_into_position(Droideka_Position pos, int time)
    */
   if (current_position == Droideka_Position(unparked))
   {
-    while (read_imu() != NO_ERROR)
-    {
-    }
-    calibrated_pitch = (double)ypr[2] * 180 / M_PI;
+    calibrate_pitch();
   }
   current_position = pos;
   Action action;
@@ -1055,15 +1052,13 @@ ErrorCode Droideka::set_movement(Droideka_Movement mvmt, bool overwriting)
       if (current_position == mvmt.start_position)
       {
         movement = mvmt;
-        leds[0] = CRGB::Black;
-        FastLED.show();
+        status_led(CRGB::Black);
         delayed_function(NOTHING, 0);
         return NO_ERROR;
       }
       else
       {
-        leds[0] = CRGB::Blue;
-        FastLED.show();
+        status_led(CRGB::Blue);
         return CURRENT_POS_AND_STARTING_POS_NOT_MATCHING;
       }
     }
@@ -1140,8 +1135,4 @@ void Droideka::next_movement_sequence(MovementSequence ms, float next_long, floa
     movement.next_lateral = next_lat;
     movement.next_angle = next_ang;
   }
-}
-
-void Droideka::two_leg_balance()
-{
 }
