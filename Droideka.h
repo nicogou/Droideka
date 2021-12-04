@@ -60,6 +60,7 @@ public:
     bool pid_running = false;
     bool pid_tunings_updated = false;
     double calibrated_pitch = 0;
+    void calibrate_pitch(int nb = 1);
 
     // MPU6050
     // class default I2C address is 0x68
