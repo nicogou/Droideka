@@ -266,6 +266,9 @@ ErrorCode Droideka::read_imu()
 
 void Droideka::calibrate_pitch(int nb)
 {
+  /* Calibrates the pitch, either on a single measurement, or by taking the mean over several measurements. Used at startup, and when in unparked position (as it is assumed to be flat)
+   * nb : number of measurements on which to perform a mean. If nb < 1, the calibrated pitch is stored as a single measurement.
+   */
   if (nb <= 0)
   {
     nb = 1;
@@ -289,6 +292,9 @@ void Droideka::calibrate_pitch(int nb)
 
 void Droideka::status_led(CRGB color)
 {
+  /* Updates the status LED color and stores the previous color if needed.
+   * color : the color you want the status LED to be.
+   */
   prev_status_leds = leds[0];
   leds[0] = color;
   FastLED.show();
@@ -842,7 +848,7 @@ void Droideka::delayed_function()
   }
 }
 
-void Droideka::delayed_function(DelayedFunction f, int t)
+void Droideka::delayed_function(DelayedFunction f, unsigned long t)
 {
   /* Sometimes, it is useful to be able to perform function at a certain timing after another action has been done.
    * This function sets up the function and timing.

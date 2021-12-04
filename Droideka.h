@@ -51,9 +51,9 @@ public:
     // IDs 6, 7 and 8 represent the rear left leg
     // IDs 9, 10 and 11 represent the rear right leg
 
-    CRGB leds[NUM_LEDS];
-    CRGB prev_status_led;
-    void status_led(CRGB color);
+    CRGB leds[NUM_LEDS];         // Stores the LED colors (only status LED for now).
+    CRGB prev_status_led;        // stores the revious status led color.
+    void status_led(CRGB color); // Updates the status led to the desired color.
 
     // Longitudinal Motor PID
     double Setpoint = 0.0, Input = 0.0, Output = 0.0; // Define PID variables.
@@ -62,7 +62,7 @@ public:
     bool pid_running = false;
     bool pid_tunings_updated = false;
     double calibrated_pitch = 0;
-    void calibrate_pitch(int nb = 1);
+    void calibrate_pitch(int nb = 1); // Calibrates the pitch for rolling stabilization.
 
     // MPU6050
     // class default I2C address is 0x68
@@ -102,11 +102,11 @@ public:
     State lastServoState;          // Stores the last known state of the servos.
     State read_servos_positions(); // Reads the servo positions.
 
-    void delayed_function();                         // Checks if a function must be operated after a certain time after an event. Example : disabling the leg servos after parking.
-    void delayed_function(DelayedFunction f, int t); // Sets up the function f to be operated after t ms.
-    DelayedFunction func = NOTHING;                  // Delayed function to be operated. Nothing at startup.
-    elapsedMillis since_event;                       // Timer for a delayed function
-    uint32_t event_time_limit = 0;                   // Store time when a delayed function has to be operated.
+    void delayed_function();                                   // Checks if a function must be operated after a certain time after an event. Example : disabling the leg servos after parking.
+    void delayed_function(DelayedFunction f, unsigned long t); // Sets up the function f to be operated after t ms.
+    DelayedFunction func = NOTHING;                            // Delayed function to be operated. Nothing at startup.
+    elapsedMillis since_event;                                 // Timer for a delayed function
+    uint32_t event_time_limit = 0;                             // Store time when a delayed function has to be operated.
 
     // GENERAL MOVEMENT OF THE ROBOT
     DroidekaMode current_mode = UNDEFINED; // Current mode. UNDEFINED at startup before get_mode is called for the first time.
