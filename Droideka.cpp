@@ -61,7 +61,7 @@ void Droideka::initialize(HardwareSerial *serial_servos, int8_t tXpin_servos)
     servos[ii] = new LX16AServo(&servoBus, ii);
   }
 
-  prev_status_leds[0] = CRGB::Black;
+  prev_status_led = CRGB::Black;
   leds[0] = CRGB::Black;
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
@@ -295,7 +295,7 @@ void Droideka::status_led(CRGB color)
   /* Updates the status LED color and stores the previous color if needed.
    * color : the color you want the status LED to be.
    */
-  prev_status_leds = leds[0];
+  prev_status_led = leds[0];
   leds[0] = color;
   FastLED.show();
 }
